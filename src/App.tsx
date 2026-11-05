@@ -1,8 +1,14 @@
+import { useRef, useState } from 'react'
 import './App.css'
 import { HistorySidebar } from './components/HistorySidebar'
 import { KeyboardStage } from './components/KeyboardStage'
+import { PinyinLab } from './components/PinyinLab'
 import { PopupCard } from './components/PopupCard'
 import { ReferenceSections } from './components/ReferenceSections'
+import {
+  COMBINATION_COUNT,
+  SINGLE_KEY_COUNT,
+} from './data/pinyin'
 import { DEMO_TOTAL_STEPS } from './data/demoTimeline'
 import { useAutoDemo } from './hooks/useAutoDemo'
 import { useKeyboardEngine } from './hooks/useKeyboardEngine'
@@ -11,8 +17,11 @@ const padTwo = (value: number): string =>
   value < 10 ? `0${value}` : String(value)
 
 function App() {
+  const [isPinyinOpen, setIsPinyinOpen] = useState(false)
+  const pinyinTriggerRef = useRef<HTMLButtonElement>(null)
   const autoDemo = useAutoDemo()
   const keyboard = useKeyboardEngine({
+    enabled: !isPinyinOpen,
     onUserKeyDown: autoDemo.stopDemo,
   })
 
@@ -30,6 +39,18 @@ function App() {
     }
     keyboard.dismissPopup()
     autoDemo.startDemo()
+  }
+
+  const handlePinyinOpen = (): void => {
+    autoDemo.stopDemo()
+    keyboard.clearKeyboardState()
+    keyboard.dismissPopup()
+    setIsPinyinOpen(true)
+  }
+
+  const handlePinyinClose = (): void => {
+    setIsPinyinOpen(false)
+    window.requestAnimationFrame(() => pinyinTriggerRef.current?.focus())
   }
 
   return (
@@ -50,6 +71,7 @@ function App() {
             <div className="brand__meta">
               <span>82 键紧凑模型</span>
               <span>29 段自动演示</span>
+              <span>63 段拼音音频</span>
               <span>真实键盘实时响应</span>
             </div>
           </div>
@@ -73,6 +95,28 @@ function App() {
                 </span>
               </div>
             </div>
+
+            <button
+              type="button"
+              className="pinyin-launch"
+              onClick={handlePinyinOpen}
+              ref={pinyinTriggerRef}
+              aria-haspopup="dialog"
+              aria-expanded={isPinyinOpen}
+            >
+              <span className="pinyin-launch__icon" aria-hidden="true">
+                ü
+              </span>
+              <span className="pinyin-launch__copy">
+                <strong>拼音试听台</strong>
+                <small>
+                  {SINGLE_KEY_COUNT} 单键 · {COMBINATION_COUNT} 组合
+                </small>
+              </span>
+              <span className="pinyin-launch__arrow" aria-hidden="true">
+                ↗
+              </span>
+            </button>
 
             <button
               type="button"
@@ -173,10 +217,12 @@ function App() {
             快捷键实验室 · Keyboard Lab
           </span>
           <span>
-            纯 React + CSS + SVG · 无图片素材 · 所有记录仅保存在当前页面
+            React + CSS + SVG · 本地拼音音频与字母表 · 所有记录仅保存在当前页面
           </span>
         </footer>
       </div>
+
+      {isPinyinOpen ? <PinyinLab onClose={handlePinyinClose} /> : null}
     </div>
   )
 }

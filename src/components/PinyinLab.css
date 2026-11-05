@@ -1,0 +1,1417 @@
+/* -------------------------------------------------------------------------- */
+/* Pinyin lab overlay                                                          */
+/* -------------------------------------------------------------------------- */
+
+.status-dot--amber {
+  background: var(--amber);
+  box-shadow: 0 0 10px rgba(255, 181, 71, 0.65);
+}
+
+.pinyin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  padding: clamp(12px, 2.2vw, 28px);
+  place-items: center;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.09), transparent 42%),
+    rgba(5, 8, 9, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: pinyin-overlay-in 180ms ease both;
+}
+
+.pinyin-overlay::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background-image: radial-gradient(rgba(255, 255, 255, 0.11) 1px, transparent 1px);
+  background-size: 26px 26px;
+  opacity: 0.12;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 72%);
+  mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 72%);
+}
+
+.pinyin-dialog {
+  position: relative;
+  display: flex;
+  width: min(1200px, 100%);
+  height: min(900px, calc(100dvh - 44px));
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(0, 229, 255, 0.17);
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(0, 229, 255, 0.075), transparent 36%),
+    linear-gradient(150deg, #1c2122 0%, #151919 52%, #111414 100%);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 28px 90px rgba(0, 0, 0, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  outline: none;
+  animation: pinyin-dialog-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pinyin-dialog__header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent);
+}
+
+.pinyin-dialog__heading {
+  min-width: 0;
+}
+
+.pinyin-dialog__heading h2 {
+  margin-top: 10px;
+  color: #f1f8f9;
+  font-size: clamp(28px, 2.4vw, 38px);
+  font-weight: 720;
+  line-height: 1.04;
+  letter-spacing: -0.8px;
+}
+
+.pinyin-dialog__heading p {
+  max-width: 580px;
+  margin-top: 8px;
+  color: #8c9b9e;
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+
+.pinyin-dialog__header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.pinyin-count-pill {
+  display: flex;
+  height: 42px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  white-space: nowrap;
+}
+
+.pinyin-count-pill strong {
+  color: #dff5f7;
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.pinyin-count-pill span {
+  color: #6d7d80;
+  font-size: 9px;
+  letter-spacing: 0.3px;
+}
+
+.pinyin-count-pill i {
+  width: 1px;
+  height: 15px;
+  margin: 0 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pinyin-close {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #96a5a8;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.pinyin-close span {
+  margin-top: -3px;
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.pinyin-close:hover {
+  border-color: rgba(0, 229, 255, 0.36);
+  background: rgba(0, 229, 255, 0.08);
+  color: #e7fbfe;
+}
+
+.pinyin-dialog__body {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) 326px;
+  gap: 24px;
+  padding: 24px 28px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pinyin-main {
+  min-width: 0;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Console                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.pinyin-console {
+  position: relative;
+  padding: 18px 20px 15px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(0, 229, 255, 0.11), transparent 48%),
+    linear-gradient(145deg, rgba(25, 42, 44, 0.88), rgba(15, 22, 23, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 16px 34px rgba(0, 0, 0, 0.18);
+}
+
+.pinyin-console::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 150px;
+  height: 150px;
+  content: '';
+  background: radial-gradient(circle at top right, rgba(0, 229, 255, 0.1), transparent 68%);
+  pointer-events: none;
+}
+
+.pinyin-console__topline {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #607679;
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 1.7px;
+}
+
+.pinyin-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #7d9295;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: color 150ms ease;
+}
+
+.pinyin-mode-toggle:hover {
+  color: #b9e9ec;
+}
+
+.pinyin-mode-toggle__label {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.pinyin-mode-toggle__state {
+  color: #536669;
+  font-family: var(--mono);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 0.8px;
+  transition: color 150ms ease;
+}
+
+.pinyin-mode-toggle__track {
+  position: relative;
+  display: inline-block;
+  width: 31px;
+  height: 17px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.pinyin-mode-toggle__track i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #687a7d;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    background 160ms ease;
+}
+
+.pinyin-mode-toggle.is-on {
+  color: #a5f7cd;
+}
+
+.pinyin-mode-toggle.is-on .pinyin-mode-toggle__state {
+  color: #71f5b5;
+}
+
+.pinyin-mode-toggle.is-on .pinyin-mode-toggle__track {
+  border-color: rgba(113, 245, 181, 0.42);
+  background: rgba(113, 245, 181, 0.12);
+  box-shadow: 0 0 14px rgba(113, 245, 181, 0.1);
+}
+
+.pinyin-mode-toggle.is-on .pinyin-mode-toggle__track i {
+  background: var(--green);
+  box-shadow:
+    0 0 9px rgba(113, 245, 181, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transform: translateX(14px);
+}
+
+.pinyin-console__playing {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  color: #708589;
+  font-family: var(--sans);
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+.pinyin-console__playing.is-playing {
+  color: #8df7ff;
+}
+
+.pinyin-signal,
+.pinyin-card__signal {
+  display: inline-flex;
+  height: 11px;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.pinyin-signal i,
+.pinyin-card__signal i {
+  width: 2px;
+  height: 4px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: 0.6;
+}
+
+.pinyin-console__playing.is-playing .pinyin-signal i,
+.pinyin-card.is-playing .pinyin-card__signal i {
+  opacity: 1;
+  animation: pinyin-signal 680ms ease-in-out infinite alternate;
+}
+
+.pinyin-signal i:nth-child(2),
+.pinyin-card__signal i:nth-child(2) {
+  animation-delay: 140ms;
+}
+
+.pinyin-signal i:nth-child(3),
+.pinyin-card__signal i:nth-child(3) {
+  animation-delay: 280ms;
+}
+
+.pinyin-console__readout {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  gap: 4px;
+  margin-top: 7px;
+  color: #effeff;
+  font-family: var(--mono);
+  font-size: clamp(54px, 6.1vw, 76px);
+  font-weight: 620;
+  line-height: 1;
+  letter-spacing: -1.5px;
+  text-shadow: 0 0 32px rgba(0, 229, 255, 0.22);
+  word-break: break-all;
+}
+
+.pinyin-console__readout.is-empty {
+  color: #476065;
+  font-size: clamp(36px, 4vw, 50px);
+  letter-spacing: 1px;
+  text-shadow: none;
+}
+
+.pinyin-console__readout.is-error {
+  color: #ffd18a;
+  text-shadow: 0 0 26px rgba(255, 181, 71, 0.18);
+}
+
+.pinyin-console__cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.82em;
+  margin-left: 3px;
+  border-radius: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.8);
+  animation: pinyin-cursor 1.05s steps(2, jump-none) infinite;
+}
+
+.pinyin-console__statusline {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 5px 16px;
+}
+
+.pinyin-console__status {
+  display: flex;
+  min-height: 18px;
+  align-items: center;
+  gap: 8px;
+  color: #93a4a7;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.pinyin-console__actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.pinyin-single-indicator {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px dashed rgba(113, 245, 181, 0.22);
+  border-radius: 11px;
+  background: rgba(113, 245, 181, 0.035);
+  color: #8ccbb0;
+  font-size: 10.5px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.pinyin-play,
+.pinyin-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 15px;
+  border-radius: 11px;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    opacity 150ms ease;
+}
+
+.pinyin-play {
+  border: 1px solid rgba(0, 229, 255, 0.7);
+  background: linear-gradient(135deg, #85f7ff, #00d9f2);
+  color: #04282d;
+  font-size: 12px;
+  font-weight: 680;
+  box-shadow: 0 8px 24px rgba(0, 229, 255, 0.14);
+}
+
+.pinyin-play > span {
+  font-size: 10px;
+}
+
+.pinyin-play:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #a1fbff, #1ee5ff);
+}
+
+.pinyin-clear {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #9dadaf;
+  font-size: 11px;
+}
+
+.pinyin-clear:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.055);
+  color: #e5f0f1;
+}
+
+.pinyin-play:disabled,
+.pinyin-clear:disabled {
+  cursor: not-allowed;
+  opacity: 0.36;
+}
+
+.pinyin-play:active:not(:disabled),
+.pinyin-clear:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.pinyin-console kbd {
+  display: inline-flex;
+  min-width: 21px;
+  height: 19px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border: 1px solid rgba(6, 43, 48, 0.15);
+  border-radius: 5px;
+  background: rgba(4, 43, 49, 0.12);
+  color: inherit;
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 650;
+  line-height: 1;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.pinyin-clear kbd,
+.pinyin-console__hints kbd {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #bdc9ca;
+  box-shadow: none;
+}
+
+.pinyin-console__hints {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 15px;
+  margin-top: 12px;
+  color: #687a7d;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.pinyin-console__hints span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pinyin-console__hints strong {
+  color: #c7e2e4;
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.pinyin-console__hints kbd {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 7.5px;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Group cards                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.pinyin-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 21px;
+  margin-top: 24px;
+}
+
+.pinyin-group {
+  min-width: 0;
+}
+
+.pinyin-group__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 0 1px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+}
+
+.pinyin-group__eyebrow {
+  color: #4d686b;
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 1.7px;
+}
+
+.pinyin-group__header h3 {
+  margin-top: 5px;
+  color: #d8e7e9;
+  font-size: 16px;
+  font-weight: 630;
+  line-height: 1.2;
+}
+
+.pinyin-group__meta {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  text-align: right;
+}
+
+.pinyin-group__meta > span {
+  color: #7d9295;
+  font-family: var(--mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.pinyin-group__meta small {
+  color: #526366;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.pinyin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.pinyin-card {
+  position: relative;
+  display: flex;
+  min-height: 75px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 7px 9px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 13px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
+    rgba(16, 21, 21, 0.64);
+  color: #d7e5e6;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.pinyin-card::after {
+  position: absolute;
+  right: 16%;
+  bottom: 0;
+  left: 16%;
+  height: 1px;
+  content: '';
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.pinyin-card:hover {
+  z-index: 1;
+  border-color: rgba(0, 229, 255, 0.32);
+  background:
+    linear-gradient(160deg, rgba(0, 229, 255, 0.1), rgba(255, 255, 255, 0.018)),
+    rgba(19, 29, 30, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 8px 18px rgba(0, 0, 0, 0.18);
+  transform: translateY(-2px);
+}
+
+.pinyin-card.is-playing {
+  border-color: rgba(0, 229, 255, 0.58);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.2), transparent 62%),
+    rgba(18, 33, 34, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 0 22px rgba(0, 229, 255, 0.12);
+}
+
+.pinyin-card.is-playing::after {
+  opacity: 1;
+}
+
+.pinyin-card__label {
+  font-family: var(--mono);
+  font-size: clamp(19px, 1.8vw, 24px);
+  font-weight: 620;
+  line-height: 1.05;
+  letter-spacing: -0.6px;
+}
+
+.pinyin-card.is-playing .pinyin-card__label {
+  color: #9ffaff;
+  text-shadow: 0 0 18px rgba(0, 229, 255, 0.34);
+}
+
+.pinyin-card__mnemonic {
+  color: #65777a;
+  font-size: 9.5px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.pinyin-card.is-playing .pinyin-card__mnemonic {
+  color: #86b8bc;
+}
+
+.pinyin-card__signal {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  height: 8px;
+  color: var(--cyan);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.pinyin-card__signal i {
+  height: 3px;
+}
+
+.pinyin-card.is-playing .pinyin-card__signal {
+  opacity: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Aside                                                                       */
+/* -------------------------------------------------------------------------- */
+
+.pinyin-aside {
+  position: sticky;
+  top: 0;
+  display: flex;
+  min-width: 0;
+  align-self: start;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pinyin-download-card,
+.pinyin-reference {
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(36, 42, 43, 0.8), rgba(19, 23, 24, 0.88));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pinyin-download-card {
+  padding: 18px;
+  border-color: rgba(255, 181, 71, 0.18);
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(255, 181, 71, 0.1), transparent 55%),
+    linear-gradient(145deg, rgba(43, 39, 31, 0.74), rgba(20, 22, 22, 0.9));
+}
+
+.pinyin-download-card__label {
+  color: #6f7a78;
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 1.65px;
+}
+
+.pinyin-download-card h3,
+.pinyin-reference h3 {
+  color: #e6ece9;
+  font-size: 17px;
+  font-weight: 630;
+  line-height: 1.2;
+}
+
+.pinyin-download-card h3 {
+  margin-top: 7px;
+}
+
+.pinyin-download-card p {
+  margin-top: 8px;
+  color: #8b918d;
+  font-size: 10.5px;
+  line-height: 1.65;
+}
+
+.pinyin-download-card p strong {
+  color: #e8d3a9;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pinyin-download-button {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  gap: 11px;
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffe0a1, #ffb547);
+  color: #352509;
+  text-decoration: none;
+  box-shadow:
+    0 10px 22px rgba(255, 181, 71, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.48);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    filter 150ms ease;
+}
+
+.pinyin-download-button:hover {
+  filter: brightness(1.04);
+  box-shadow:
+    0 13px 26px rgba(255, 181, 71, 0.19),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transform: translateY(-1px);
+}
+
+.pinyin-download-button:active {
+  transform: translateY(1px);
+}
+
+.pinyin-download-button__icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(53, 37, 9, 0.14);
+  border-radius: 9px;
+  background: rgba(73, 48, 4, 0.09);
+  font-family: var(--mono);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pinyin-download-button > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pinyin-download-button strong {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.pinyin-download-button small {
+  color: rgba(53, 37, 9, 0.61);
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: 0.7px;
+}
+
+.pinyin-download-card__note {
+  display: block;
+  margin-top: 10px;
+  color: #6b706b;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.pinyin-reference {
+  padding: 16px;
+}
+
+.pinyin-reference header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pinyin-reference h3 {
+  margin-top: 7px;
+}
+
+.pinyin-reference__expand {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3px;
+  padding: 5px 8px;
+  border: 1px solid rgba(113, 245, 181, 0.2);
+  border-radius: 7px;
+  background: rgba(113, 245, 181, 0.05);
+  color: #8bd5b9;
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.pinyin-reference__expand:hover {
+  border-color: rgba(113, 245, 181, 0.42);
+  background: rgba(113, 245, 181, 0.1);
+  color: #b6ffe0;
+}
+
+.pinyin-reference__chart {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  background: #0c1415;
+  color: inherit;
+  text-align: inherit;
+  cursor: zoom-in;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.16);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.pinyin-reference__chart:hover {
+  border-color: rgba(0, 229, 255, 0.26);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.16),
+    0 0 24px rgba(0, 229, 255, 0.06);
+}
+
+.pinyin-reference__chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.pinyin-reference p {
+  margin-top: 9px;
+  color: #5e6d70;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Expanded SVG chart                                                          */
+/* -------------------------------------------------------------------------- */
+
+.pinyin-chart-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 260;
+  display: grid;
+  padding: clamp(12px, 2.2vw, 28px);
+  place-items: center;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.09), transparent 44%),
+    rgba(4, 7, 8, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  animation: pinyin-overlay-in 180ms ease both;
+}
+
+.pinyin-chart-dialog {
+  display: flex;
+  width: min(1000px, 100%);
+  height: min(94dvh, 1100px);
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(0, 229, 255, 0.08), transparent 36%),
+    linear-gradient(150deg, #1b2122 0%, #141919 54%, #0f1414 100%);
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  outline: none;
+  animation: pinyin-dialog-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.pinyin-chart-dialog__header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 21px 26px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent);
+}
+
+.pinyin-chart-dialog__header h2 {
+  margin-top: 8px;
+  color: #f1f8f9;
+  font-size: clamp(25px, 2.1vw, 34px);
+  font-weight: 720;
+  line-height: 1.05;
+  letter-spacing: -0.7px;
+}
+
+.pinyin-chart-dialog__header p {
+  margin-top: 7px;
+  color: #839396;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.pinyin-chart-dialog__body {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 22px 26px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.035), transparent 55%),
+    rgba(8, 12, 12, 0.22);
+}
+
+.pinyin-chart-dialog__canvas {
+  width: min(880px, 100%);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(0, 229, 255, 0.11);
+  border-radius: 16px;
+  background: #0b1314;
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.pinyin-chart-dialog__canvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Motion & responsive                                                         */
+/* -------------------------------------------------------------------------- */
+
+@keyframes pinyin-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pinyin-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pinyin-signal {
+  from {
+    height: 3px;
+    opacity: 0.55;
+  }
+  to {
+    height: 10px;
+    opacity: 1;
+  }
+}
+
+@keyframes pinyin-cursor {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  49%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 1040px) {
+  .pinyin-dialog {
+    height: min(920px, calc(100dvh - 32px));
+  }
+
+  .pinyin-dialog__body {
+    grid-template-columns: minmax(0, 1fr) 292px;
+    gap: 20px;
+    padding: 20px 22px 24px;
+  }
+
+  .pinyin-dialog__header {
+    padding: 21px 22px 18px;
+  }
+}
+
+@media (max-width: 860px) {
+  .pinyin-dialog__body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pinyin-main {
+    display: contents;
+  }
+
+  .pinyin-console {
+    order: 0;
+    flex-shrink: 0;
+  }
+
+  .pinyin-aside {
+    position: static;
+    order: 1;
+    display: grid;
+    flex-shrink: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .pinyin-groups {
+    order: 2;
+    margin-top: 0;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .pinyin-overlay {
+    padding: 0;
+    place-items: stretch;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .pinyin-chart-overlay {
+    padding: 0;
+    place-items: stretch;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .pinyin-chart-dialog {
+    width: 100%;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .pinyin-chart-dialog__header {
+    gap: 12px;
+    padding: 16px 15px 14px;
+  }
+
+  .pinyin-chart-dialog__header h2 {
+    margin-top: 7px;
+    font-size: 24px;
+  }
+
+  .pinyin-chart-dialog__header p {
+    margin-top: 5px;
+    font-size: 10.5px;
+  }
+
+  .pinyin-chart-dialog__body {
+    padding: 12px;
+  }
+
+  .pinyin-chart-dialog__canvas {
+    border-radius: 11px;
+  }
+
+  .pinyin-dialog {
+    width: 100%;
+    height: 100dvh;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .pinyin-dialog__header {
+    gap: 12px;
+    padding: 16px 15px 14px;
+  }
+
+  .pinyin-dialog__heading h2 {
+    margin-top: 7px;
+    font-size: 25px;
+  }
+
+  .pinyin-dialog__heading p {
+    margin-top: 6px;
+    font-size: 11px;
+  }
+
+  .pinyin-count-pill {
+    display: none;
+  }
+
+  .pinyin-close {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .pinyin-close span {
+    font-size: 24px;
+  }
+
+  .pinyin-dialog__body {
+    gap: 16px;
+    padding: 14px 13px 20px;
+  }
+
+  .pinyin-aside {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .pinyin-reference {
+    display: none;
+  }
+
+  .pinyin-console {
+    padding: 14px 13px 12px;
+    border-radius: 16px;
+  }
+
+  .pinyin-console__topline {
+    gap: 8px;
+    font-size: 7px;
+    letter-spacing: 1.1px;
+  }
+
+  .pinyin-mode-toggle {
+    gap: 5px;
+  }
+
+  .pinyin-mode-toggle__label {
+    font-size: 8.5px;
+  }
+
+  .pinyin-mode-toggle__state {
+    font-size: 6.5px;
+  }
+
+  .pinyin-mode-toggle__track {
+    width: 29px;
+    height: 16px;
+  }
+
+  .pinyin-mode-toggle__track i {
+    width: 10px;
+    height: 10px;
+  }
+
+  .pinyin-mode-toggle.is-on .pinyin-mode-toggle__track i {
+    transform: translateX(13px);
+  }
+
+  .pinyin-console__statusline {
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .pinyin-console__playing {
+    font-size: 8.5px;
+  }
+
+  .pinyin-console__readout {
+    min-height: 68px;
+    margin-top: 6px;
+    font-size: clamp(46px, 14vw, 64px);
+  }
+
+  .pinyin-console__readout.is-empty {
+    font-size: 34px;
+  }
+
+  .pinyin-console__status {
+    font-size: 10px;
+  }
+
+  .pinyin-console__actions {
+    margin-top: 11px;
+  }
+
+  .pinyin-play,
+  .pinyin-clear {
+    min-height: 38px;
+    padding: 0 11px;
+    font-size: 10.5px;
+  }
+
+  .pinyin-single-indicator {
+    min-height: 38px;
+    flex: 1 1 auto;
+    padding: 0 10px;
+    font-size: 9.5px;
+    white-space: normal;
+  }
+
+  .pinyin-console__hints {
+    gap: 5px 10px;
+    margin-top: 10px;
+    font-size: 8px;
+  }
+
+  .pinyin-console__hints span:last-child {
+    width: 100%;
+  }
+
+  .pinyin-groups {
+    gap: 18px;
+    margin-top: 0;
+  }
+
+  .pinyin-group__header {
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 8px;
+  }
+
+  .pinyin-group__header h3 {
+    font-size: 15px;
+  }
+
+  .pinyin-group__meta {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 1px;
+    padding-top: 2px;
+  }
+
+  .pinyin-group__meta small {
+    display: none;
+  }
+
+  .pinyin-grid {
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 6px;
+    margin-top: 9px;
+  }
+
+  .pinyin-card {
+    min-height: 67px;
+    padding: 10px 5px 7px;
+    border-radius: 11px;
+  }
+
+  .pinyin-card__label {
+    font-size: 20px;
+  }
+
+  .pinyin-card__mnemonic {
+    font-size: 8.5px;
+  }
+
+  .pinyin-aside {
+    position: static;
+  }
+
+  .pinyin-download-card {
+    padding: 14px;
+    border-radius: 15px;
+  }
+
+  .pinyin-download-card p {
+    margin-top: 6px;
+  }
+
+  .pinyin-download-button {
+    min-height: 48px;
+    margin-top: 10px;
+  }
+
+  .pinyin-download-card__note {
+    display: none;
+  }
+}
+
+@media (max-height: 620px) and (min-width: 701px) {
+  .pinyin-dialog {
+    height: calc(100dvh - 20px);
+  }
+
+  .pinyin-dialog__header {
+    padding-top: 15px;
+    padding-bottom: 13px;
+  }
+
+  .pinyin-dialog__heading h2 {
+    font-size: 26px;
+  }
+
+  .pinyin-dialog__heading p {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pinyin-overlay,
+  .pinyin-dialog,
+  .pinyin-chart-overlay,
+  .pinyin-chart-dialog {
+    animation: none;
+  }
+
+  .pinyin-signal i,
+  .pinyin-card__signal i,
+  .pinyin-console__cursor {
+    animation: none;
+  }
+}

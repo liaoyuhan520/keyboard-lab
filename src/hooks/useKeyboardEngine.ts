@@ -19,6 +19,7 @@ export interface LivePopup {
 }
 
 interface UseKeyboardEngineOptions {
+  readonly enabled?: boolean
   readonly onUserKeyDown?: () => void
 }
 
@@ -28,6 +29,7 @@ interface UseKeyboardEngineResult {
   readonly popup: LivePopup | null
   readonly history: readonly HistoryEntry[]
   readonly clearHistory: () => void
+  readonly clearKeyboardState: () => void
   readonly dismissPopup: () => void
 }
 
@@ -72,6 +74,7 @@ export const useKeyboardEngine = (
   const popupIdRef = useRef(0)
   const historyIdRef = useRef(0)
   const onUserKeyDownRef = useRef(options.onUserKeyDown)
+  const enabled = options.enabled ?? true
 
   useEffect(() => {
     onUserKeyDownRef.current = options.onUserKeyDown
@@ -117,7 +120,18 @@ export const useKeyboardEngine = (
     return () => window.clearTimeout(timeout)
   }, [popup])
 
+  const clearKeyboardState = useCallback((): void => {
+    pressedCodesRef.current.clear()
+    shiftCodesRef.current.clear()
+    shiftUsedRef.current = false
+    setActiveCodes(new Set<string>())
+  }, [])
+
   useEffect(() => {
+    if (!enabled) {
+      return
+    }
+
     const onKeyDown = (event: KeyboardEvent): void => {
       if (isTypingTarget(event.target)) {
         return
@@ -182,13 +196,6 @@ export const useKeyboardEngine = (
       }
     }
 
-    const clearKeyboardState = (): void => {
-      pressedCodesRef.current.clear()
-      shiftCodesRef.current.clear()
-      shiftUsedRef.current = false
-      setActiveCodes(new Set<string>())
-    }
-
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     window.addEventListener('blur', clearKeyboardState)
@@ -198,7 +205,7 @@ export const useKeyboardEngine = (
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', clearKeyboardState)
     }
-  }, [showAction, toggleIme])
+  }, [clearKeyboardState, enabled, showAction, toggleIme])
 
   const clearHistory = useCallback((): void => {
     setHistory([])
@@ -214,6 +221,7 @@ export const useKeyboardEngine = (
     popup,
     history,
     clearHistory,
+    clearKeyboardState,
     dismissPopup,
   }
 }

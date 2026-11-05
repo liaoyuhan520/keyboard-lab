@@ -8,6 +8,7 @@ A standalone interactive keyboard tutorial built with Vite, React and TypeScript
 - Real `KeyboardEvent.code` input with live keycaps, shortcut popups and IME simulation
 - Optional 29-step automatic demo
 - Live key history sidebar
+- Pinyin audio lab with a single-key / combination-mode switch, `|` and Backspace clearing, an SVG alphabet chart with an enlarged viewer, and a 63-file ZIP export
 - 87-key reference and Windows shortcut cheat sheet below the app
 
 ## Development
