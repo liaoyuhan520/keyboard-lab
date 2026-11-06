@@ -377,6 +377,29 @@
   text-shadow: 0 0 26px rgba(255, 181, 71, 0.18);
 }
 
+.pinyin-console__value {
+  min-width: 0;
+  word-break: break-all;
+}
+
+.pinyin-console__keys {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-left: 5px;
+  color: #62898d;
+  font-size: 0.38em;
+  font-weight: 520;
+  line-height: 1;
+  letter-spacing: 0.7px;
+  text-shadow: none;
+  white-space: nowrap;
+  transform: translateY(0.22em);
+}
+
+.pinyin-console__readout.is-error .pinyin-console__keys {
+  color: #aa8554;
+}
+
 .pinyin-console__cursor {
   display: inline-block;
   width: 3px;

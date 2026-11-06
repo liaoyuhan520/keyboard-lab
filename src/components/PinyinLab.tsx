@@ -38,6 +38,9 @@ const isClearShortcut = (event: KeyboardEvent): boolean =>
   event.key === '|' ||
   event.key === '\\'
 
+const toKeyboardKeys = (pinyin: string): string =>
+  pinyin.replaceAll('ü', 'v').toUpperCase()
+
 export function PinyinLab({ onClose }: PinyinLabProps) {
   const [isComboMode, setIsComboMode] = useState(false)
   const [isChartExpanded, setIsChartExpanded] = useState(false)
@@ -293,6 +296,7 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
   const readout = buffer || '拼音'
   const isReadoutEmpty = buffer.length === 0
   const isReadoutError = error.length > 0
+  const keyboardKeys = toKeyboardKeys(buffer)
   const status =
     error ||
     (matchedItem
@@ -389,7 +393,12 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
                 }${isReadoutError ? ' is-error' : ''}`}
                 aria-hidden="true"
               >
-                {readout}
+                <span className="pinyin-console__value">{readout}</span>
+                {!isReadoutEmpty ? (
+                  <span className="pinyin-console__keys">
+                    （{keyboardKeys}）
+                  </span>
+                ) : null}
                 {!isReadoutEmpty ? (
                   <span className="pinyin-console__cursor" />
                 ) : null}
