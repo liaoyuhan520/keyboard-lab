@@ -1,0 +1,1294 @@
+/* -------------------------------------------------------------------------- */
+/* Hanzi practice                                                              */
+/* -------------------------------------------------------------------------- */
+
+.hanzi-practice {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 18px;
+  outline: none;
+}
+
+.hanzi-section-eyebrow {
+  color: #54747a;
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: 1.5px;
+}
+
+.hanzi-input-card,
+.hanzi-candidates,
+.hanzi-character-card,
+.hanzi-stroke-stage,
+.hanzi-result-empty {
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(31, 39, 40, 0.7), rgba(16, 21, 22, 0.86));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.hanzi-input-card {
+  padding: 17px 19px 13px;
+  border-color: rgba(0, 229, 255, 0.2);
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(0, 229, 255, 0.1), transparent 52%),
+    linear-gradient(145deg, rgba(25, 42, 44, 0.88), rgba(15, 22, 23, 0.94));
+}
+
+.hanzi-input-card__topline,
+.hanzi-character-card__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #607679;
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 650;
+  letter-spacing: 1.5px;
+}
+
+.hanzi-input-display {
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+  color: #f0feff;
+  font-family: var(--mono);
+  font-size: clamp(48px, 5.4vw, 68px);
+  font-weight: 620;
+  line-height: 1;
+  letter-spacing: -1.2px;
+  text-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+}
+
+.hanzi-input-display.is-long {
+  font-size: clamp(30px, 3.6vw, 46px);
+  letter-spacing: -0.5px;
+}
+
+.hanzi-input-display.is-very-long {
+  font-size: clamp(22px, 2.8vw, 34px);
+  letter-spacing: -0.3px;
+}
+
+.hanzi-input-display.is-empty {
+  color: #405c60;
+  font-size: clamp(34px, 4.1vw, 48px);
+  letter-spacing: 0.5px;
+  text-shadow: none;
+}
+
+.hanzi-input-display__value {
+  min-width: 0;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+.hanzi-input-display__keys {
+  flex: 0 0 auto;
+  margin-left: 5px;
+  color: #62898d;
+  font-size: 0.38em;
+  font-weight: 520;
+  letter-spacing: 0.7px;
+  text-shadow: none;
+  white-space: nowrap;
+  transform: translateY(0.22em);
+}
+
+.hanzi-input-display__cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.8em;
+  margin-left: 3px;
+  border-radius: 2px;
+  background: var(--cyan);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.8);
+  animation: pinyin-cursor 1.05s steps(2, jump-none) infinite;
+}
+
+.hanzi-input-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 7px;
+}
+
+.hanzi-input-hint {
+  color: #718487;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.hanzi-input-buttons {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.hanzi-keyboard-toggle,
+.hanzi-clear-button,
+.hanzi-secondary-button,
+.hanzi-speak-button,
+.hanzi-more-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease,
+    transform 150ms ease,
+    opacity 150ms ease;
+}
+
+.hanzi-keyboard-toggle,
+.hanzi-clear-button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #9dadaf;
+  font-size: 10px;
+}
+
+.hanzi-keyboard-toggle:hover,
+.hanzi-clear-button:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.055);
+  color: #e5f0f1;
+}
+
+.hanzi-keyboard-toggle.is-open {
+  border-color: rgba(0, 229, 255, 0.28);
+  background: rgba(0, 229, 255, 0.07);
+  color: #9cecfb;
+}
+
+.hanzi-clear-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.36;
+}
+
+.hanzi-keyhints {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 13px;
+  margin-top: 10px;
+  color: #687a7d;
+  font-size: 8.5px;
+}
+
+.hanzi-keyhints span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hanzi-soft-keyboard {
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  border-radius: 13px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 229, 255, 0.05), transparent 62%),
+    rgba(9, 16, 17, 0.56);
+}
+
+.hanzi-soft-keyboard__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #5e7a7e;
+  font-family: var(--mono);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 1.1px;
+}
+
+.hanzi-soft-keyboard__topline span:last-child {
+  color: #78a39c;
+  letter-spacing: 0.4px;
+}
+
+.hanzi-soft-keyboard__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.hanzi-soft-keyboard__row {
+  display: flex;
+  gap: 4px;
+}
+
+.hanzi-soft-key {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 35px;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
+    rgba(15, 23, 24, 0.78);
+  color: #cfe3e4;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  transition:
+    border-color 100ms ease,
+    background 100ms ease,
+    transform 100ms ease;
+}
+
+.hanzi-soft-key:hover {
+  border-color: rgba(0, 229, 255, 0.3);
+  background:
+    linear-gradient(180deg, rgba(0, 229, 255, 0.1), rgba(255, 255, 255, 0.02)),
+    rgba(17, 29, 30, 0.9);
+}
+
+.hanzi-soft-key:active {
+  background: rgba(0, 229, 255, 0.16);
+  transform: translateY(1px);
+}
+
+.hanzi-soft-keyboard__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.hanzi-soft-action {
+  min-height: 32px;
+  flex: 1;
+  font-size: 9px;
+}
+
+.hanzi-keyhints strong {
+  color: #c7e2e4;
+  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.hanzi-keyhints kbd,
+.hanzi-clear-button kbd {
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #bdc9ca;
+  font-family: var(--mono);
+  font-size: 7.5px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Candidates                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.hanzi-candidates {
+  padding: 15px 17px 16px;
+}
+
+.hanzi-candidates__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+}
+
+.hanzi-candidates__header > div h3,
+.hanzi-stroke-stage__header h3 {
+  margin-top: 5px;
+  color: #dce9ea;
+  font-size: 15px;
+  font-weight: 630;
+  line-height: 1.2;
+}
+
+.hanzi-candidates__count {
+  color: #738c90;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.hanzi-candidate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.hanzi-word-section,
+.hanzi-char-section {
+  margin-top: 11px;
+}
+
+.hanzi-word-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 7px;
+}
+
+.hanzi-char-section .hanzi-candidate-grid {
+  margin-top: 0;
+}
+
+.hanzi-candidate-group-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #587b7f;
+  font-family: var(--mono);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 1.2px;
+}
+
+.hanzi-word-candidate {
+  position: relative;
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 8px 9px;
+  border: 1px solid rgba(113, 245, 181, 0.15);
+  border-radius: 12px;
+  background:
+    linear-gradient(160deg, rgba(113, 245, 181, 0.055), rgba(255, 255, 255, 0.012)),
+    rgba(15, 22, 20, 0.64);
+  color: #e5f3f4;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.hanzi-word-candidate:hover {
+  border-color: rgba(113, 245, 181, 0.36);
+  background:
+    linear-gradient(160deg, rgba(113, 245, 181, 0.12), rgba(255, 255, 255, 0.018)),
+    rgba(19, 30, 26, 0.9);
+  transform: translateY(-2px);
+}
+
+.hanzi-word-candidate.is-selected {
+  border-color: rgba(113, 245, 181, 0.62);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(113, 245, 181, 0.2), transparent 65%),
+    rgba(18, 34, 28, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 0 22px rgba(113, 245, 181, 0.1);
+}
+
+.hanzi-word-candidate__word {
+  color: #e8f8f1;
+  font-family: 'KaiTi', 'STKaiti', 'Microsoft YaHei UI', var(--sans);
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 580;
+  line-height: 1.05;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.hanzi-word-candidate__pinyin {
+  color: #749088;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.hanzi-word-candidate.is-selected .hanzi-word-candidate__word {
+  color: #a5f7cd;
+}
+
+.hanzi-word-candidate.is-selected .hanzi-word-candidate__pinyin {
+  color: #86c4ac;
+}
+
+.hanzi-candidate {
+  position: relative;
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 7px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012)),
+    rgba(16, 21, 21, 0.64);
+  color: #e5f3f4;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.hanzi-candidate:hover {
+  border-color: rgba(0, 229, 255, 0.32);
+  background:
+    linear-gradient(160deg, rgba(0, 229, 255, 0.09), rgba(255, 255, 255, 0.018)),
+    rgba(19, 29, 30, 0.9);
+  transform: translateY(-2px);
+}
+
+.hanzi-candidate.is-selected {
+  border-color: rgba(113, 245, 181, 0.58);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(113, 245, 181, 0.17), transparent 65%),
+    rgba(18, 33, 30, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 20px rgba(113, 245, 181, 0.1);
+}
+
+.hanzi-candidate__index {
+  position: absolute;
+  top: 6px;
+  left: 7px;
+  color: #53777b;
+  font-family: var(--mono);
+  font-size: 7px;
+  line-height: 1;
+}
+
+.hanzi-candidate__char {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 620;
+  line-height: 1.05;
+}
+
+.hanzi-candidate.is-selected .hanzi-candidate__char {
+  color: #a5f7cd;
+}
+
+.hanzi-candidate__pinyin {
+  color: #74888b;
+  font-family: var(--mono);
+  font-size: 8.5px;
+  line-height: 1.2;
+}
+
+.hanzi-candidate.is-selected .hanzi-candidate__pinyin {
+  color: #86c4ac;
+}
+
+.hanzi-candidates__empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 3px 3px;
+  color: #728487;
+}
+
+.hanzi-candidates__empty > span {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  color: #648084;
+  font-family: var(--mono);
+  font-size: 16px;
+}
+
+.hanzi-candidates__empty p {
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+.hanzi-more-button {
+  margin-top: 11px;
+  padding: 6px 10px;
+  border: 1px solid rgba(0, 229, 255, 0.16);
+  background: rgba(0, 229, 255, 0.045);
+  color: #8caeb2;
+  font-size: 9.5px;
+}
+
+.hanzi-more-button:hover {
+  border-color: rgba(0, 229, 255, 0.3);
+  color: #cffbff;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Selected character and stroke stage                                        */
+/* -------------------------------------------------------------------------- */
+
+.hanzi-result {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.88fr) minmax(320px, 1.12fr);
+  align-items: stretch;
+  gap: 16px;
+  scroll-margin-top: 8px;
+}
+
+.hanzi-character-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 16px 17px;
+  border-color: rgba(113, 245, 181, 0.16);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(113, 245, 181, 0.08), transparent 52%),
+    linear-gradient(145deg, rgba(29, 40, 37, 0.8), rgba(15, 22, 21, 0.92));
+}
+
+.hanzi-character-card__topline {
+  color: #5a7b70;
+}
+
+.hanzi-character-card__topline span:last-child {
+  color: #679083;
+  font-family: var(--sans);
+  font-size: 8px;
+  letter-spacing: 0.2px;
+}
+
+.hanzi-character-card__glyph {
+  display: grid;
+  min-height: 150px;
+  flex: 1 1 auto;
+  margin-top: 6px;
+  place-items: center;
+  color: #f2fffc;
+  font-family: 'KaiTi', 'STKaiti', 'Microsoft YaHei UI', var(--sans);
+  font-size: clamp(80px, 10vw, 126px);
+  font-weight: 500;
+  line-height: 1;
+  text-shadow:
+    0 0 40px rgba(113, 245, 181, 0.16),
+    0 2px 0 rgba(0, 0, 0, 0.24);
+}
+
+.hanzi-word-card__glyph {
+  display: grid;
+  min-height: 150px;
+  flex: 1 1 auto;
+  margin-top: 6px;
+  place-items: center;
+  color: #f2fffc;
+  font-family: 'KaiTi', 'STKaiti', 'Microsoft YaHei UI', var(--sans);
+  font-size: clamp(54px, 6.8vw, 88px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-shadow:
+    0 0 40px rgba(113, 245, 181, 0.14),
+    0 2px 0 rgba(0, 0, 0, 0.24);
+  overflow-wrap: anywhere;
+}
+
+.hanzi-word-characters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.hanzi-word-character {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.028);
+  color: #dcebe9;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.hanzi-word-character:hover {
+  border-color: rgba(0, 229, 255, 0.28);
+  background: rgba(0, 229, 255, 0.05);
+}
+
+.hanzi-word-character.is-active {
+  border-color: rgba(113, 245, 181, 0.5);
+  background: rgba(113, 245, 181, 0.09);
+  box-shadow: 0 0 16px rgba(113, 245, 181, 0.07);
+}
+
+.hanzi-word-character > span {
+  font-family: var(--mono);
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.hanzi-word-character > small {
+  color: #6b8580;
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1.2;
+}
+
+.hanzi-word-character.is-active > span {
+  color: #a5f7cd;
+}
+
+.hanzi-word-character.is-active > small {
+  color: #87c4ac;
+}
+
+.hanzi-character-card__reading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.hanzi-character-card__reading strong {
+  color: #a5f7cd;
+  font-family: var(--mono);
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.4px;
+}
+
+.hanzi-character-card__reading > span {
+  color: #647b75;
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+button.hanzi-character-card__glyph,
+button.hanzi-word-card__glyph {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button.hanzi-character-card__glyph:hover:not(:disabled),
+button.hanzi-word-card__glyph:hover:not(:disabled) {
+  color: #ffffff;
+  text-shadow:
+    0 0 48px rgba(113, 245, 181, 0.22),
+    0 2px 0 rgba(0, 0, 0, 0.24);
+}
+
+button.hanzi-character-card__glyph:focus-visible,
+button.hanzi-word-card__glyph:focus-visible {
+  outline: 2px solid rgba(0, 229, 255, 0.72);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+button.hanzi-character-card__glyph:disabled,
+button.hanzi-word-card__glyph:disabled {
+  cursor: default;
+}
+
+.hanzi-pinyin-parts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.hanzi-pinyin-parts > span {
+  display: flex;
+  min-height: 43px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: #c3dad4;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+.hanzi-pinyin-parts small {
+  color: #5c726c;
+  font-family: var(--sans);
+  font-size: 7.5px;
+  font-weight: 500;
+}
+
+.hanzi-character-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 13px;
+}
+
+.hanzi-speak-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid rgba(113, 245, 181, 0.62);
+  background: linear-gradient(135deg, #a6ffdc, #5ce6ad);
+  color: #06271b;
+  font-size: 11px;
+  font-weight: 680;
+  box-shadow: 0 8px 20px rgba(113, 245, 181, 0.12);
+}
+
+.hanzi-speak-button > span {
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.hanzi-speak-button:hover:not(:disabled) {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+
+.hanzi-speak-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.hanzi-voice-note {
+  color: #647873;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.hanzi-feedback {
+  margin-top: 9px;
+  color: #5e756f;
+  font-size: 8.5px;
+  line-height: 1.5;
+}
+
+.hanzi-feedback.is-error {
+  color: #ffbd78;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Stroke order                                                                */
+/* -------------------------------------------------------------------------- */
+
+.hanzi-stroke-stage {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 16px 17px 14px;
+  border-color: rgba(255, 181, 71, 0.14);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 181, 71, 0.055), transparent 48%),
+    linear-gradient(145deg, rgba(35, 34, 28, 0.7), rgba(16, 20, 20, 0.9));
+}
+
+.hanzi-stroke-stage__header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.hanzi-stroke-stage__header h3 {
+  margin-top: 5px;
+}
+
+.hanzi-stroke-stage__count {
+  color: #b58e5c;
+  font-family: var(--mono);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.hanzi-tianzige {
+  position: relative;
+  width: min(100%, 338px);
+  aspect-ratio: 1;
+  margin: 15px auto 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 181, 71, 0.28);
+  border-radius: 13px;
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(0, 229, 255, 0.075), transparent 65%),
+    #0c1516;
+  box-shadow:
+    inset 0 0 0 8px rgba(255, 255, 255, 0.012),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 14px 30px rgba(0, 0, 0, 0.18);
+}
+
+.hanzi-tianzige__guide {
+  position: absolute;
+  z-index: 0;
+  background: rgba(255, 181, 71, 0.2);
+}
+
+.hanzi-tianzige__guide--vertical {
+  top: 7%;
+  bottom: 7%;
+  left: 50%;
+  width: 1px;
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 181, 71, 0.28) 55%,
+    transparent 55%
+  );
+  background-size: 1px 9px;
+  background-color: transparent;
+}
+
+.hanzi-tianzige__guide--horizontal {
+  top: 50%;
+  right: 7%;
+  left: 7%;
+  height: 1px;
+  background-image: linear-gradient(
+    to right,
+    rgba(255, 181, 71, 0.28) 55%,
+    transparent 55%
+  );
+  background-size: 9px 1px;
+  background-color: transparent;
+}
+
+.hanzi-tianzige__canvas {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.hanzi-tianzige__canvas svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.hanzi-stroke-stage__overlay {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  background: rgba(10, 17, 18, 0.86);
+  color: #8fa4a6;
+  text-align: center;
+  backdrop-filter: blur(3px);
+}
+
+.hanzi-stroke-stage__overlay strong {
+  color: #dcebec;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hanzi-stroke-stage__overlay small {
+  max-width: 210px;
+  color: #607476;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.hanzi-stroke-stage__overlay.is-error strong {
+  color: #ffd19a;
+}
+
+.hanzi-spinner {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 2px;
+  border: 2px solid rgba(0, 229, 255, 0.17);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: hanzi-spin 800ms linear infinite;
+}
+
+.hanzi-stroke-stage__overlay .hanzi-secondary-button {
+  margin-top: 5px;
+}
+
+.hanzi-stroke-stage__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 11px;
+  color: #687b7e;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.hanzi-secondary-button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  color: #a5b8b8;
+  font-size: 9px;
+}
+
+.hanzi-secondary-button:hover:not(:disabled) {
+  border-color: rgba(0, 229, 255, 0.28);
+  background: rgba(0, 229, 255, 0.06);
+  color: #e6feff;
+}
+
+.hanzi-secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Empty state                                                                 */
+/* -------------------------------------------------------------------------- */
+
+.hanzi-result-empty {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 20px 24px;
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.hanzi-result-empty__grid {
+  display: grid;
+  width: 84px;
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 181, 71, 0.22);
+  border-radius: 9px;
+  background:
+    linear-gradient(
+      to right,
+      transparent calc(50% - 0.5px),
+      rgba(255, 181, 71, 0.2) calc(50% - 0.5px),
+      rgba(255, 181, 71, 0.2) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      to bottom,
+      transparent calc(50% - 0.5px),
+      rgba(255, 181, 71, 0.2) calc(50% - 0.5px),
+      rgba(255, 181, 71, 0.2) calc(50% + 0.5px),
+      transparent calc(50% + 0.5px)
+    ),
+    rgba(255, 255, 255, 0.015);
+  color: #586e70;
+  font-family: 'KaiTi', 'STKaiti', var(--sans);
+  font-size: 38px;
+}
+
+.hanzi-result-empty h3 {
+  color: #b9cccd;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.hanzi-result-empty p {
+  max-width: 580px;
+  margin-top: 5px;
+  color: #66787b;
+  font-size: 10.5px;
+  line-height: 1.65;
+}
+
+@keyframes hanzi-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1100px) {
+  .hanzi-result {
+    grid-template-columns: minmax(240px, 0.86fr) minmax(290px, 1.14fr);
+  }
+
+  .hanzi-character-card__glyph {
+    font-size: clamp(72px, 9vw, 104px);
+  }
+}
+
+@media (max-width: 860px) {
+  .hanzi-result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hanzi-character-card {
+    order: 0;
+  }
+
+  .hanzi-stroke-stage {
+    order: 1;
+  }
+
+  .hanzi-character-card__glyph {
+    min-height: 125px;
+    font-size: 92px;
+  }
+
+  .hanzi-tianzige {
+    width: min(100%, 320px);
+  }
+}
+
+@media (max-width: 640px) {
+  .hanzi-practice {
+    gap: 13px;
+  }
+
+  .hanzi-input-card {
+    padding: 14px 13px 12px;
+    border-radius: 16px;
+  }
+
+  .hanzi-input-card__topline {
+    font-size: 7px;
+    letter-spacing: 1.1px;
+  }
+
+  .hanzi-input-display {
+    min-height: 65px;
+    font-size: clamp(42px, 13vw, 58px);
+  }
+
+  .hanzi-input-display.is-long {
+    font-size: clamp(27px, 8.5vw, 36px);
+  }
+
+  .hanzi-input-display.is-very-long {
+    font-size: clamp(20px, 6.2vw, 27px);
+  }
+
+  .hanzi-input-display.is-empty {
+    font-size: 32px;
+  }
+
+  .hanzi-input-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 3px;
+  }
+
+  .hanzi-input-buttons {
+    width: 100%;
+  }
+
+  .hanzi-input-buttons .hanzi-keyboard-toggle,
+  .hanzi-input-buttons .hanzi-clear-button {
+    flex: 1;
+    width: auto;
+    min-height: 36px;
+    justify-content: center;
+    font-size: 9.5px;
+  }
+
+  .hanzi-soft-keyboard {
+    margin-top: 10px;
+    padding: 8px;
+  }
+
+  .hanzi-soft-keyboard__rows {
+    gap: 3px;
+  }
+
+  .hanzi-soft-keyboard__row {
+    gap: 3px;
+  }
+
+  .hanzi-soft-key {
+    min-height: 38px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+
+  .hanzi-soft-keyboard__actions {
+    gap: 5px;
+  }
+
+  .hanzi-soft-action {
+    min-height: 35px;
+  }
+
+  .hanzi-keyhints {
+    margin-top: 8px;
+    font-size: 8px;
+  }
+
+  .hanzi-candidates {
+    padding: 13px 13px 14px;
+    border-radius: 15px;
+  }
+
+  .hanzi-candidate-grid {
+    grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+    gap: 6px;
+  }
+
+  .hanzi-candidate {
+    min-height: 66px;
+    border-radius: 10px;
+  }
+
+  .hanzi-word-grid {
+    grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
+    gap: 6px;
+  }
+
+  .hanzi-word-candidate {
+    min-height: 68px;
+    border-radius: 10px;
+  }
+
+  .hanzi-word-candidate__word {
+    font-size: 21px;
+  }
+
+  .hanzi-candidate__char {
+    font-size: 25px;
+  }
+
+  .hanzi-candidate__pinyin {
+    font-size: 8px;
+  }
+
+  .hanzi-character-card,
+  .hanzi-stroke-stage {
+    padding: 14px 13px;
+    border-radius: 15px;
+  }
+
+  .hanzi-character-card__glyph {
+    min-height: 112px;
+    font-size: 84px;
+  }
+
+  .hanzi-word-card__glyph {
+    min-height: 110px;
+    font-size: clamp(42px, 13vw, 58px);
+  }
+
+  .hanzi-character-card__reading strong {
+    font-size: 26px;
+  }
+
+  .hanzi-word-card .hanzi-character-card__reading strong {
+    font-size: 21px;
+    letter-spacing: -0.3px;
+  }
+
+  .hanzi-character-card__actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hanzi-speak-button {
+    width: 100%;
+  }
+
+  .hanzi-tianzige {
+    width: min(100%, 300px);
+    margin-top: 12px;
+  }
+
+  .hanzi-stroke-stage__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hanzi-stroke-stage__footer .hanzi-secondary-button {
+    width: 100%;
+  }
+
+  .hanzi-result-empty {
+    align-items: flex-start;
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .hanzi-result-empty__grid {
+    width: 64px;
+    font-size: 30px;
+  }
+
+  .hanzi-result-empty h3 {
+    font-size: 13px;
+  }
+
+  .hanzi-result-empty p {
+    font-size: 9.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hanzi-input-display__cursor,
+  .hanzi-spinner {
+    animation: none;
+  }
+}

@@ -9,13 +9,28 @@ A standalone interactive keyboard tutorial built with Vite, React and TypeScript
 - Optional 29-step automatic demo
 - Live key history sidebar
 - Pinyin audio lab with a single-key / combination-mode switch, `|` and Backspace clearing, an SVG alphabet chart with an enlarged viewer, and a 63-file ZIP export
+- Hanzi and word practice mode: type pinyin, pick a word or character, hear it read aloud and watch animated stroke order for each character in a Tianzige grid
+- Mobile-friendly pinyin soft keyboard and tap-to-read character / word cards
 - 87-key reference and Windows shortcut cheat sheet below the app
+
+## Notes
+
+- Hanzi stroke data is loaded on demand from the pinned `hanzi-writer-data` CDN and cached in memory. The first view of a character needs a network connection.
+- Pronunciations use the browser/OS Chinese speech-synthesis voice. Voice availability and timbre depend on the device.
+- Word candidates come from the HSK 3.1 vocabulary list and are ordered by SUBTLEX-CH-WF frequency. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for data and library attribution.
 
 ## Development
 
 ```bash
 npm install
 npm run dev
+```
+
+Generated data can be rebuilt with:
+
+```bash
+npm run generate:hanzi-frequency
+npm run generate:hanzi-words
 ```
 
 ## Checks

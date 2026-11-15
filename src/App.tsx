@@ -5,10 +5,6 @@ import { KeyboardStage } from './components/KeyboardStage'
 import { PinyinLab } from './components/PinyinLab'
 import { PopupCard } from './components/PopupCard'
 import { ReferenceSections } from './components/ReferenceSections'
-import {
-  COMBINATION_COUNT,
-  SINGLE_KEY_COUNT,
-} from './data/pinyin'
 import { DEMO_TOTAL_STEPS } from './data/demoTimeline'
 import { useAutoDemo } from './hooks/useAutoDemo'
 import { useKeyboardEngine } from './hooks/useKeyboardEngine'
@@ -108,10 +104,8 @@ function App() {
                 ü
               </span>
               <span className="pinyin-launch__copy">
-                <strong>拼音试听台</strong>
-                <small>
-                  {SINGLE_KEY_COUNT} 单键 · {COMBINATION_COUNT} 组合
-                </small>
+                <strong>拼音学习台</strong>
+                <small>发音试听 · 汉字笔顺</small>
               </span>
               <span className="pinyin-launch__arrow" aria-hidden="true">
                 ↗
@@ -217,7 +211,7 @@ function App() {
             快捷键实验室 · Keyboard Lab
           </span>
           <span>
-            React + CSS + SVG · 本地拼音音频与字母表 · 所有记录仅保存在当前页面
+            React + CSS + SVG · 拼音音频与汉字笔顺 · 所有记录仅保存在当前页面
           </span>
         </footer>
       </div>

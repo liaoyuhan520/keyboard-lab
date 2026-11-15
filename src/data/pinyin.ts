@@ -206,5 +206,8 @@ export const PINYIN_ZIP_DOWNLOAD_NAME = '汉语拼音单音音频.zip'
 export const normalizePinyinInput = (rawInput: string): string =>
   rawInput.toLowerCase().replaceAll('v', 'ü')
 
+export const toKeyboardKeys = (pinyin: string): string =>
+  pinyin.replaceAll('ü', 'v').toUpperCase()
+
 export const findPinyin = (rawInput: string): PinyinItem | undefined =>
   PINYIN_BY_LABEL.get(normalizePinyinInput(rawInput))

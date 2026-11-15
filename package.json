@@ -6,10 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "generate:hanzi-frequency": "node scripts/generate-hanzi-frequency.mjs",
+    "generate:hanzi-words": "node scripts/generate-hanzi-words.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "cnchar": "^3.2.6",
+    "cnchar-poly": "^3.2.6",
+    "hanzi-writer": "^3.7.3",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
@@ -23,6 +28,10 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
+    "hsk3.1-syllabus": "^0.1.0",
+    "pinyin-pro": "^3.29.5",
+    "subtlex-ch-chr": "^0.0.0",
+    "subtlex-ch-wf": "^0.0.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.0",
     "vite": "^8.3.5"

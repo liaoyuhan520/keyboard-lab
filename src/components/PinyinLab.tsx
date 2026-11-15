@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react'
 import { createPortal } from 'react-dom'
 import {
   COMBINATION_COUNT,
@@ -11,10 +19,15 @@ import {
   SINGLE_KEY_ITEMS,
   findPinyin,
   normalizePinyinInput,
+  toKeyboardKeys,
   type PinyinItem,
 } from '../data/pinyin'
 import { PinyinReferenceChart } from './PinyinReferenceChart'
 import './PinyinLab.css'
+
+const HanziPractice = lazy(() => import('./HanziPractice'))
+
+type LabView = 'audio' | 'hanzi'
 
 interface PinyinLabProps {
   readonly onClose: () => void
@@ -38,10 +51,8 @@ const isClearShortcut = (event: KeyboardEvent): boolean =>
   event.key === '|' ||
   event.key === '\\'
 
-const toKeyboardKeys = (pinyin: string): string =>
-  pinyin.replaceAll('ü', 'v').toUpperCase()
-
 export function PinyinLab({ onClose }: PinyinLabProps) {
+  const [activeView, setActiveView] = useState<LabView>('audio')
   const [isComboMode, setIsComboMode] = useState(false)
   const [isChartExpanded, setIsChartExpanded] = useState(false)
   const [buffer, setBuffer] = useState('')
@@ -50,9 +61,11 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
   const [audioError, setAudioError] = useState('')
 
   const bufferRef = useRef('')
+  const bodyRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const chartDialogRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const isAudioView = activeView === 'audio'
 
   const matchedItem = findPinyin(buffer)
   const playingItem =
@@ -129,6 +142,39 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
     updateBuffer('')
     setError('')
   }, [updateBuffer])
+
+  const switchView = useCallback(
+    (nextView: LabView, focusTab = false): void => {
+      if (nextView === activeView) {
+        return
+      }
+
+      if (nextView === 'hanzi') {
+        audioRef.current?.pause()
+        setPlayingId(null)
+        setIsChartExpanded(false)
+      }
+
+      setActiveView(nextView)
+      window.requestAnimationFrame(() => {
+        bodyRef.current?.scrollTo({ top: 0 })
+        if (focusTab) {
+          document.getElementById(`pinyin-tab-${nextView}`)?.focus()
+        }
+      })
+    },
+    [activeView],
+  )
+
+  const handleViewTabsKeyDown = (
+    event: ReactKeyboardEvent<HTMLDivElement>,
+  ): void => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+      return
+    }
+    event.preventDefault()
+    switchView(isAudioView ? 'hanzi' : 'audio', true)
+  }
 
   useEffect(() => {
     const previousFocus =
@@ -215,6 +261,10 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
         return
       }
 
+      if (!isAudioView) {
+        return
+      }
+
       if (event.altKey || event.ctrlKey || event.metaKey) {
         return
       }
@@ -286,6 +336,7 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
   }, [
     clearBuffer,
     commitBuffer,
+    isAudioView,
     isChartExpanded,
     isComboMode,
     onClose,
@@ -333,34 +384,90 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
           <div className="pinyin-dialog__heading">
             <div className="eyebrow eyebrow--cyan">
               <span className="status-dot status-dot--green" />
-              PINYIN AUDIO LAB · {PINYIN_TOTAL} CLIPS
+              {isAudioView
+                ? `PINYIN AUDIO LAB · ${PINYIN_TOTAL} CLIPS`
+                : 'PINYIN HANZI LAB · STROKE ORDER'}
             </div>
-            <h2 id="pinyin-lab-title">汉语拼音试听台</h2>
+            <h2 id="pinyin-lab-title">汉语拼音学习台</h2>
             <p id="pinyin-lab-description">
-              默认单键直听；开启组合输入后，输入多个字母并按 Enter 试听组合。
+              {isAudioView
+                ? '默认单键直听；开启组合输入后，输入多个字母并按 Enter 试听组合。'
+                : '输入拼音挑选词语或汉字，听中文读音，并在田字格中逐字查看动态笔顺。'}
             </p>
           </div>
 
           <div className="pinyin-dialog__header-actions">
-            <div className="pinyin-count-pill">
-              <strong>{SINGLE_KEY_COUNT}</strong>
-              <span>单键</span>
-              <i aria-hidden="true" />
-              <strong>{COMBINATION_COUNT}</strong>
-              <span>组合</span>
-            </div>
+            {isAudioView ? (
+              <div className="pinyin-count-pill">
+                <strong>{SINGLE_KEY_COUNT}</strong>
+                <span>单键</span>
+                <i aria-hidden="true" />
+                <strong>{COMBINATION_COUNT}</strong>
+                <span>组合</span>
+              </div>
+            ) : (
+              <span className="pinyin-hanzi-badge">拼音 → 汉字 → 笔顺</span>
+            )}
             <button
               type="button"
               className="pinyin-close"
               onClick={onClose}
-              aria-label="关闭拼音试听台"
+              aria-label="关闭拼音学习台"
             >
               <span aria-hidden="true">×</span>
             </button>
           </div>
         </header>
 
-        <div className="pinyin-dialog__body">
+        <div className="pinyin-view-bar">
+          <div
+            className="pinyin-view-tabs"
+            role="tablist"
+            aria-label="拼音学习模式"
+            onKeyDown={handleViewTabsKeyDown}
+          >
+            <button
+              type="button"
+              id="pinyin-tab-audio"
+              className={`pinyin-view-tab${isAudioView ? ' is-active' : ''}`}
+              role="tab"
+              aria-selected={isAudioView}
+              aria-controls="pinyin-panel-audio"
+              tabIndex={isAudioView ? 0 : -1}
+              onClick={() => switchView('audio')}
+            >
+              <span className="pinyin-view-tab__index">01</span>
+              发音试听
+            </button>
+            <button
+              type="button"
+              id="pinyin-tab-hanzi"
+              className={`pinyin-view-tab${!isAudioView ? ' is-active' : ''}`}
+              role="tab"
+              aria-selected={!isAudioView}
+              aria-controls="pinyin-panel-hanzi"
+              tabIndex={isAudioView ? -1 : 0}
+              onClick={() => switchView('hanzi')}
+            >
+              <span className="pinyin-view-tab__index">02</span>
+              汉字拼读
+            </button>
+          </div>
+          <span className="pinyin-view-bar__hint">
+            {isAudioView
+              ? '26 个单键直接试听 · 37 个组合按 Enter'
+              : '输入拼音 · 词语与单字 · 田字格笔顺'}
+          </span>
+        </div>
+
+        {isAudioView ? (
+          <div
+            id="pinyin-panel-audio"
+            className="pinyin-dialog__body"
+            role="tabpanel"
+            aria-labelledby="pinyin-tab-audio"
+            ref={bodyRef}
+          >
           <div className="pinyin-main">
             <section className="pinyin-console" aria-label="拼音输入与试听">
               <div className="pinyin-console__topline">
@@ -586,11 +693,32 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
               <p>与网页暗色界面统一的矢量字母表，完整保留 63 个拼音与助记字。</p>
             </section>
           </aside>
-        </div>
+          </div>
+        ) : (
+          <div
+            id="pinyin-panel-hanzi"
+            className="pinyin-dialog__body pinyin-dialog__body--hanzi"
+            role="tabpanel"
+            aria-labelledby="pinyin-tab-hanzi"
+            ref={bodyRef}
+          >
+            <Suspense
+              fallback={
+                <div className="hanzi-practice-loading" role="status">
+                  <span className="hanzi-practice-loading__orb" />
+                  <strong>正在准备汉字拼读…</strong>
+                  <small>加载拼音与笔顺引擎</small>
+                </div>
+              }
+            >
+              <HanziPractice />
+            </Suspense>
+          </div>
+        )}
       </div>
     </div>
 
-      {isChartExpanded ? (
+      {isAudioView && isChartExpanded ? (
         <div
           className="pinyin-chart-overlay"
           onMouseDown={(event) => {
@@ -616,7 +744,7 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
                 </div>
                 <h2 id="pinyin-chart-dialog-title">字母表放大查看</h2>
                 <p id="pinyin-chart-dialog-description">
-                  滚动查看完整字母表，按 Esc 或右上角按钮返回试听台。
+                  滚动查看完整字母表，按 Esc 或右上角按钮返回学习台。
                 </p>
               </div>
               <button
