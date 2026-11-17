@@ -392,7 +392,7 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
             <p id="pinyin-lab-description">
               {isAudioView
                 ? '默认单键直听；开启组合输入后，输入多个字母并按 Enter 试听组合。'
-                : '输入拼音挑选词语或汉字，听中文读音，并在田字格中逐字查看动态笔顺。'}
+                : '输入拼音挑选词语、成语或汉字，听中文读音，并在田字格中逐字查看动态笔顺。'}
             </p>
           </div>
 
@@ -456,7 +456,7 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
           <span className="pinyin-view-bar__hint">
             {isAudioView
               ? '26 个单键直接试听 · 37 个组合按 Enter'
-              : '输入拼音 · 词语与单字 · 田字格笔顺'}
+              : '输入拼音 · 词语/成语与单字 · 田字格笔顺'}
           </span>
         </div>
 

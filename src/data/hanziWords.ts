@@ -4,6 +4,7 @@ export interface WordCandidate {
   readonly key: string
   readonly word: string
   readonly syllables: readonly string[]
+  readonly isIdiom: boolean
 }
 
 const WORD_INDEX = new Map<string, WordCandidate[]>()
@@ -13,6 +14,7 @@ for (const [key, word, syllables] of WORD_LEXICON) {
     key,
     word,
     syllables: syllables.split(' '),
+    isIdiom: false,
   }
   const existing = WORD_INDEX.get(key)
   if (existing) {

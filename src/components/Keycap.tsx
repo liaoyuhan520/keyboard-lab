@@ -90,6 +90,7 @@ export function Keycap({ definition, active, style }: KeycapProps) {
       className={[
         'keycap',
         kindClassNames[kind],
+        definition.subLabel ? 'keycap--dual' : '',
         active ? 'is-active' : '',
       ]
         .filter(Boolean)

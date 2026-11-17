@@ -46,6 +46,13 @@ This project uses the following third-party libraries and datasets.
 - Source: https://github.com/leonsilicon/hsk3.1-syllabus
 - Used at development time to generate the common 2–4 character word lexicon in `src/data/hanziWordLexicon.ts`.
 
+## cnchar-idiom
+
+- Package: `cnchar-idiom`
+- License: MIT
+- Project: https://github.com/theajack/cnchar
+- Used at development time to generate the idiom lexicon in `src/data/hanziIdiomLexicon.ts`.
+
 ## SUBTLEX-CH-WF word frequency data
 
 - Package: `subtlex-ch-wf`

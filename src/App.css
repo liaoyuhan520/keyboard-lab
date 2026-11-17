@@ -928,6 +928,15 @@
   font-weight: 550;
 }
 
+/*
+ * Dual-label keys keep their tall digit glyphs from being clipped by the
+ * label line box when the keyboard is scaled down. The outer keycap still
+ * clips anything that would escape the key.
+ */
+.keycap--dual .keycap__label {
+  overflow: visible;
+}
+
 .keycap__stack {
   position: relative;
   z-index: 1;

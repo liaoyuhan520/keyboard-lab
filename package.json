@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "generate:hanzi-frequency": "node scripts/generate-hanzi-frequency.mjs",
+    "generate:hanzi-idioms": "node scripts/generate-hanzi-idioms.mjs",
     "generate:hanzi-words": "node scripts/generate-hanzi-words.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -24,6 +25,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "cnchar-idiom": "^3.2.6",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",

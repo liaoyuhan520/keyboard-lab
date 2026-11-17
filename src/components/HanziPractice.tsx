@@ -71,6 +71,10 @@ export default function HanziPractice() {
   const [buffer, setBuffer] = useState('')
   const [selected, setSelected] = useState<Selection | null>(null)
   const [showAll, setShowAll] = useState(false)
+  const [idiomResult, setIdiomResult] = useState<{
+    readonly key: string
+    readonly candidates: readonly WordCandidate[]
+  } | null>(null)
   const [isSoftKeyboardOpen, setIsSoftKeyboardOpen] = useState(() => {
     if (typeof window === 'undefined') {
       return false
@@ -104,9 +108,66 @@ export default function HanziPractice() {
     () => [...charResult.common, ...charResult.other],
     [charResult],
   )
+  const hasFourCharacterWordCandidate = wordCandidates.some(
+    (candidate) => Array.from(candidate.word).length === 4,
+  )
+  const shouldLoadIdioms =
+    buffer.length >= 8 &&
+    (wordCandidates.length === 0 || hasFourCharacterWordCandidate)
+
+  useEffect(() => {
+    if (!shouldLoadIdioms) {
+      return
+    }
+
+    let cancelled = false
+    const key = buffer
+
+    void import('../data/hanziIdioms')
+      .then(({ findIdiomCandidates }) => {
+        if (cancelled) {
+          return
+        }
+        setIdiomResult({
+          key,
+          candidates: findIdiomCandidates(key),
+        })
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIdiomResult({ key, candidates: [] })
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [buffer, shouldLoadIdioms])
+
+  const idiomCandidates = useMemo(
+    () =>
+      shouldLoadIdioms && idiomResult?.key === buffer
+        ? idiomResult.candidates
+        : [],
+    [buffer, idiomResult, shouldLoadIdioms],
+  )
+  const isLoadingIdioms =
+    shouldLoadIdioms && idiomResult?.key !== buffer
+  const allWordCandidates = useMemo(() => {
+    const seen = new Set<string>()
+    const combined: WordCandidate[] = []
+    for (const candidate of [...idiomCandidates, ...wordCandidates]) {
+      if (seen.has(candidate.word)) {
+        continue
+      }
+      seen.add(candidate.word)
+      combined.push(candidate)
+    }
+    return combined
+  }, [idiomCandidates, wordCandidates])
   const allCandidates = useMemo<CandidateItem[]>(
     () => [
-      ...wordCandidates.map((candidate) => ({
+      ...allWordCandidates.map((candidate) => ({
         kind: 'word' as const,
         key: `word:${candidate.word}`,
         candidate,
@@ -117,7 +178,7 @@ export default function HanziPractice() {
         candidate,
       })),
     ],
-    [allCharCandidates, wordCandidates],
+    [allCharCandidates, allWordCandidates],
   )
   const visibleCandidates = showAll
     ? allCandidates
@@ -135,11 +196,22 @@ export default function HanziPractice() {
   const isEmpty = buffer.length === 0
   const isLongInput = buffer.length > 8
   const isVeryLongInput = buffer.length > 14
+  const hasCharCandidates =
+    charResult.common.length + charResult.other.length > 0
+  const allWordCandidatesAreIdioms =
+    allWordCandidates.length > 0 &&
+    allWordCandidates.every((candidate) => candidate.isIdiom)
   const candidateTitle =
-    wordCandidates.length > 0 && charResult.common.length + charResult.other.length > 0
-      ? '候选词语与汉字'
-      : wordCandidates.length > 0
-        ? '候选词语'
+    allWordCandidates.length > 0
+      ? allWordCandidatesAreIdioms
+        ? hasCharCandidates
+          ? '候选成语与汉字'
+          : '候选成语'
+        : hasCharCandidates
+          ? '候选词语与汉字'
+          : '候选词语'
+      : isLoadingIdioms
+        ? '正在查找成语'
         : '候选汉字'
   const selectedId = selected
     ? selected.kind === 'word'
@@ -335,7 +407,11 @@ export default function HanziPractice() {
           <h3>{candidateTitle}</h3>
         </div>
         <span className="hanzi-candidates__count" aria-live="polite">
-          {isEmpty ? '等待输入' : `${allCandidates.length} 个`}
+          {isEmpty
+            ? '等待输入'
+            : isLoadingIdioms && allCandidates.length === 0
+              ? '查询中'
+              : `${allCandidates.length} 个`}
         </span>
       </div>
 
@@ -343,14 +419,19 @@ export default function HanziPractice() {
         <div className="hanzi-candidates__empty">
           <span aria-hidden="true">拼</span>
           <p>
-            按下键盘字母输入拼音，例如 ba、shi、nihao、xuexi。
+            按下键盘字母输入拼音，例如 ba、shi、nihao、huashetianzu。
           </p>
+        </div>
+      ) : isLoadingIdioms && allCandidates.length === 0 ? (
+        <div className="hanzi-candidates__empty is-loading">
+          <span className="hanzi-spinner" aria-hidden="true" />
+          <p>正在加载成语词库…</p>
         </div>
       ) : allCandidates.length === 0 ? (
         <div className="hanzi-candidates__empty">
           <span aria-hidden="true">?</span>
           <p>
-            没有找到「{buffer}」的候选词语或汉字，继续输入完整拼音或换一个试试。
+            没有找到「{buffer}」的候选词语、成语或汉字，继续输入完整拼音或换一个试试。
           </p>
         </div>
       ) : (
@@ -370,15 +451,20 @@ export default function HanziPractice() {
                       type="button"
                       key={candidate.key}
                       className={`hanzi-word-candidate${
-                        isSelected ? ' is-selected' : ''
-                      }`}
+                        candidate.candidate.isIdiom ? ' is-idiom' : ''
+                      }${isSelected ? ' is-selected' : ''}`}
                       onClick={() => selectCandidate(candidate)}
-                      aria-label={`选择词语 ${candidate.candidate.word}，读音 ${candidate.candidate.syllables.join(' ')}`}
+                      aria-label={`选择${
+                        candidate.candidate.isIdiom ? '成语' : '词语'
+                      } ${candidate.candidate.word}，读音 ${candidate.candidate.syllables.join(' ')}`}
                       aria-pressed={isSelected}
                     >
                       <span className="hanzi-candidate__index">
                         {index < VISIBLE_CANDIDATE_LIMIT ? index + 1 : ''}
                       </span>
+                      {candidate.candidate.isIdiom ? (
+                        <span className="hanzi-word-candidate__tag">成语</span>
+                      ) : null}
                       <span className="hanzi-word-candidate__word">
                         {candidate.candidate.word}
                       </span>
@@ -472,7 +558,7 @@ export default function HanziPractice() {
         className="hanzi-speak-button"
         onClick={speakSelected}
         disabled={!isSupported}
-        aria-label="点击朗读当前词语或汉字"
+        aria-label="点击朗读当前成语、词语或汉字"
       >
         <span aria-hidden="true">♪</span>
         {isSpeaking ? '正在朗读…' : '点击朗读'}
@@ -625,8 +711,15 @@ export default function HanziPractice() {
             <>
               <div className="hanzi-character-card hanzi-word-card">
                 <div className="hanzi-character-card__topline">
-                  <span>SELECTED WORD</span>
-                  <span>{Array.from(selected.candidate.word).length} 字词</span>
+                  <span>
+                    {selected.candidate.isIdiom
+                      ? 'SELECTED IDIOM'
+                      : 'SELECTED WORD'}
+                  </span>
+                  <span>
+                    {Array.from(selected.candidate.word).length}{' '}
+                    {selected.candidate.isIdiom ? '字成语' : '字词'}
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -640,7 +733,9 @@ export default function HanziPractice() {
                 </button>
                 <div className="hanzi-character-card__reading">
                   <strong>{selected.candidate.syllables.join(' ')}</strong>
-                  <span>词语</span>
+                  <span>
+                    {selected.candidate.isIdiom ? '成语' : '词语'}
+                  </span>
                 </div>
                 <div className="hanzi-word-characters">
                   {Array.from(selected.candidate.word).map(
