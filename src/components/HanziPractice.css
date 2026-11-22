@@ -437,6 +437,50 @@
   white-space: nowrap;
 }
 
+.hanzi-word-candidate.is-fuzzy {
+  border-style: dashed;
+}
+
+.hanzi-word-candidate.is-fuzzy .hanzi-word-candidate__pinyin {
+  color: #b28c58;
+}
+
+.hanzi-word-candidate.is-multi {
+  min-height: 82px;
+  padding: 10px 7px 8px;
+}
+
+.hanzi-word-candidate.is-multi .hanzi-word-candidate__word {
+  max-width: 100%;
+  font-size: clamp(17px, 1.4vw, 20px);
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.hanzi-word-candidate.is-multi .hanzi-word-candidate__pinyin {
+  max-width: 100%;
+  font-size: 7px;
+  line-height: 1.25;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.hanzi-word-card__glyph.is-multi {
+  max-width: 100%;
+  font-size: clamp(32px, 5vw, 64px);
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+}
+
+.hanzi-word-card.is-multi .hanzi-word-characters {
+  grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+}
+
 .hanzi-word-candidate.is-idiom {
   border-color: rgba(255, 181, 71, 0.2);
   background:
@@ -751,6 +795,75 @@
   color: #647b75;
   font-family: var(--mono);
   font-size: 10px;
+}
+
+.hanzi-idiom-definition {
+  min-width: 0;
+  margin-top: 10px;
+  padding: 11px 12px;
+  border: 1px solid rgba(255, 181, 71, 0.16);
+  border-radius: 10px;
+  background:
+    linear-gradient(160deg, rgba(255, 181, 71, 0.055), transparent 70%),
+    rgba(22, 20, 15, 0.54);
+  overflow-wrap: anywhere;
+}
+
+.hanzi-idiom-definition__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #b8925e;
+  font-family: var(--mono);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+}
+
+.hanzi-idiom-definition__loading {
+  color: #8a744f;
+  font-size: 7.5px;
+  letter-spacing: 0.4px;
+}
+
+.hanzi-idiom-definition__text,
+.hanzi-idiom-definition__status,
+.hanzi-idiom-definition__details p {
+  margin: 7px 0 0;
+  color: #d8d4c8;
+  font-size: 12.5px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.hanzi-idiom-definition__status {
+  color: #8d887c;
+  font-size: 11px;
+}
+
+.hanzi-idiom-definition__details {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255, 181, 71, 0.11);
+}
+
+.hanzi-idiom-definition__details summary {
+  color: #a98555;
+  font-size: 9.5px;
+  line-height: 1.6;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hanzi-idiom-definition__details summary:hover {
+  color: #d1ae76;
+}
+
+.hanzi-idiom-definition__details p {
+  color: #b9b4a6;
+  font-size: 11.5px;
 }
 
 button.hanzi-character-card__glyph,
@@ -1254,6 +1367,26 @@ button.hanzi-word-card__glyph:disabled {
     font-size: 21px;
   }
 
+  .hanzi-word-candidate.is-multi {
+    min-height: 78px;
+  }
+
+  .hanzi-word-candidate.is-multi .hanzi-word-candidate__word {
+    font-size: 17px;
+  }
+
+  .hanzi-word-candidate.is-multi .hanzi-word-candidate__pinyin {
+    font-size: 6.5px;
+  }
+
+  .hanzi-word-card__glyph.is-multi {
+    font-size: clamp(30px, 8vw, 44px);
+  }
+
+  .hanzi-word-card.is-multi .hanzi-word-characters {
+    grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
+  }
+
   .hanzi-candidate__char {
     font-size: 25px;
   }
@@ -1285,6 +1418,21 @@ button.hanzi-word-card__glyph:disabled {
   .hanzi-word-card .hanzi-character-card__reading strong {
     font-size: 21px;
     letter-spacing: -0.3px;
+  }
+
+  .hanzi-idiom-definition {
+    margin-top: 9px;
+    padding: 10px;
+    border-radius: 9px;
+  }
+
+  .hanzi-idiom-definition__text {
+    font-size: 12px;
+    line-height: 1.75;
+  }
+
+  .hanzi-idiom-definition__details p {
+    font-size: 11px;
   }
 
   .hanzi-character-card__actions {

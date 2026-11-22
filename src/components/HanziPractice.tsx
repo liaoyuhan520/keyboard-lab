@@ -11,6 +11,7 @@ import {
   type HanziCandidate,
 } from '../data/hanziCandidates'
 import {
+  findFuzzyWordCandidates,
   findWordCandidates,
   type WordCandidate,
 } from '../data/hanziWords'
@@ -34,6 +35,17 @@ interface HanziCandidateItem {
   readonly kind: 'char'
   readonly key: string
   readonly candidate: HanziCandidate
+}
+
+interface IdiomDefinitionView {
+  readonly brief: string
+  readonly detail: string
+}
+
+interface IdiomDefinitionState {
+  readonly word: string
+  readonly definition: IdiomDefinitionView | null
+  readonly failed: boolean
 }
 
 type CandidateItem = WordCandidateItem | HanziCandidateItem
@@ -75,6 +87,8 @@ export default function HanziPractice() {
     readonly key: string
     readonly candidates: readonly WordCandidate[]
   } | null>(null)
+  const [idiomDefinitionState, setIdiomDefinitionState] =
+    useState<IdiomDefinitionState | null>(null)
   const [isSoftKeyboardOpen, setIsSoftKeyboardOpen] = useState(() => {
     if (typeof window === 'undefined') {
       return false
@@ -100,6 +114,10 @@ export default function HanziPractice() {
     () => findWordCandidates(buffer),
     [buffer],
   )
+  const fuzzyWordCandidates = useMemo(
+    () => findFuzzyWordCandidates(buffer),
+    [buffer],
+  )
   const charResult = useMemo(
     () => findHanziCandidates(buffer),
     [buffer],
@@ -113,6 +131,7 @@ export default function HanziPractice() {
   )
   const shouldLoadIdioms =
     buffer.length >= 8 &&
+    allCharCandidates.length === 0 &&
     (wordCandidates.length === 0 || hasFourCharacterWordCandidate)
 
   useEffect(() => {
@@ -156,15 +175,28 @@ export default function HanziPractice() {
   const allWordCandidates = useMemo(() => {
     const seen = new Set<string>()
     const combined: WordCandidate[] = []
-    for (const candidate of [...idiomCandidates, ...wordCandidates]) {
+    for (const candidate of [
+      ...idiomCandidates,
+      ...wordCandidates,
+      ...fuzzyWordCandidates,
+    ]) {
       if (seen.has(candidate.word)) {
         continue
       }
       seen.add(candidate.word)
       combined.push(candidate)
     }
+
+    combined.sort(
+      (left, right) =>
+        Number(left.matchType === 'fuzzy') -
+          Number(right.matchType === 'fuzzy') ||
+        (left.fuzzyScore ?? 0) - (right.fuzzyScore ?? 0) ||
+        right.frequency - left.frequency ||
+        Array.from(right.word).length - Array.from(left.word).length,
+    )
     return combined
-  }, [idiomCandidates, wordCandidates])
+  }, [fuzzyWordCandidates, idiomCandidates, wordCandidates])
   const allCandidates = useMemo<CandidateItem[]>(
     () => [
       ...allWordCandidates.map((candidate) => ({
@@ -218,6 +250,57 @@ export default function HanziPractice() {
       ? `word:${selected.candidate.word}`
       : `char:${selected.candidate.char}:${selected.candidate.reading.pinyin}`
     : null
+  const selectedWordLength =
+    selected?.kind === 'word'
+      ? Array.from(selected.candidate.word).length
+      : 0
+  const selectedIdiomWord =
+    selected?.kind === 'word' && selected.candidate.isIdiom
+      ? selected.candidate.word
+      : null
+
+  useEffect(() => {
+    if (!selectedIdiomWord) {
+      return
+    }
+
+    let cancelled = false
+
+    void import('../data/hanziIdiomDefinitions')
+      .then(({ findIdiomDefinition }) => {
+        if (cancelled) {
+          return
+        }
+        setIdiomDefinitionState({
+          word: selectedIdiomWord,
+          definition: findIdiomDefinition(selectedIdiomWord),
+          failed: false,
+        })
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIdiomDefinitionState({
+            word: selectedIdiomWord,
+            definition: null,
+            failed: true,
+          })
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [selectedIdiomWord])
+
+  const selectedDefinitionState =
+    selectedIdiomWord &&
+    idiomDefinitionState?.word === selectedIdiomWord
+      ? idiomDefinitionState
+      : null
+  const isDefinitionLoading =
+    Boolean(selectedIdiomWord) && !selectedDefinitionState
+  const definitionFailed = selectedDefinitionState?.failed ?? false
+  const selectedDefinition = selectedDefinitionState?.definition ?? null
 
   const resetForInput = useCallback((): void => {
     setSelected(null)
@@ -446,17 +529,27 @@ export default function HanziPractice() {
                   const isSelected =
                     selected?.kind === 'word' &&
                     selected.candidate.word === candidate.candidate.word
+                  const wordLength = Array.from(
+                    candidate.candidate.word,
+                  ).length
+                  const isMulti = wordLength > 4
+                  const isFuzzy =
+                    candidate.candidate.matchType === 'fuzzy'
                   return (
                     <button
                       type="button"
                       key={candidate.key}
                       className={`hanzi-word-candidate${
                         candidate.candidate.isIdiom ? ' is-idiom' : ''
+                      }${isMulti ? ' is-multi' : ''}${
+                        isFuzzy ? ' is-fuzzy' : ''
                       }${isSelected ? ' is-selected' : ''}`}
                       onClick={() => selectCandidate(candidate)}
                       aria-label={`选择${
                         candidate.candidate.isIdiom ? '成语' : '词语'
-                      } ${candidate.candidate.word}，读音 ${candidate.candidate.syllables.join(' ')}`}
+                      } ${candidate.candidate.word}，读音 ${candidate.candidate.syllables.join(' ')}${
+                        isFuzzy ? '，模糊匹配' : ''
+                      }`}
                       aria-pressed={isSelected}
                     >
                       <span className="hanzi-candidate__index">
@@ -469,6 +562,7 @@ export default function HanziPractice() {
                         {candidate.candidate.word}
                       </span>
                       <span className="hanzi-word-candidate__pinyin">
+                        {isFuzzy ? '≈ ' : ''}
                         {candidate.candidate.syllables.join(' ')}
                       </span>
                     </button>
@@ -709,7 +803,11 @@ export default function HanziPractice() {
         >
           {selected.kind === 'word' ? (
             <>
-              <div className="hanzi-character-card hanzi-word-card">
+              <div
+                className={`hanzi-character-card hanzi-word-card${
+                  selectedWordLength > 4 ? ' is-multi' : ''
+                }`}
+              >
                 <div className="hanzi-character-card__topline">
                   <span>
                     {selected.candidate.isIdiom
@@ -717,13 +815,15 @@ export default function HanziPractice() {
                       : 'SELECTED WORD'}
                   </span>
                   <span>
-                    {Array.from(selected.candidate.word).length}{' '}
+                    {selectedWordLength}{' '}
                     {selected.candidate.isIdiom ? '字成语' : '字词'}
                   </span>
                 </div>
                 <button
                   type="button"
-                  className="hanzi-word-card__glyph"
+                  className={`hanzi-word-card__glyph${
+                    selectedWordLength > 4 ? ' is-multi' : ''
+                  }`}
                   onClick={speakSelected}
                   disabled={!isSupported}
                   aria-label={`点击朗读词语 ${selected.candidate.word}`}
@@ -737,6 +837,47 @@ export default function HanziPractice() {
                     {selected.candidate.isIdiom ? '成语' : '词语'}
                   </span>
                 </div>
+                {selected.candidate.isIdiom ? (
+                  <div
+                    className="hanzi-idiom-definition"
+                    aria-live="polite"
+                    aria-busy={isDefinitionLoading}
+                  >
+                    <div className="hanzi-idiom-definition__header">
+                      <span>成语释义</span>
+                      {isDefinitionLoading ? (
+                        <span className="hanzi-idiom-definition__loading">
+                          加载中
+                        </span>
+                      ) : null}
+                    </div>
+                    {isDefinitionLoading ? (
+                      <p className="hanzi-idiom-definition__status">
+                        正在加载释义…
+                      </p>
+                    ) : definitionFailed ? (
+                      <p className="hanzi-idiom-definition__status">
+                        释义暂时无法加载，仍可朗读和查看逐字笔顺。
+                      </p>
+                    ) : selectedDefinition ? (
+                      <>
+                        <p className="hanzi-idiom-definition__text">
+                          {selectedDefinition.brief}
+                        </p>
+                        {selectedDefinition.detail ? (
+                          <details className="hanzi-idiom-definition__details">
+                            <summary>详细释义</summary>
+                            <p>{selectedDefinition.detail}</p>
+                          </details>
+                        ) : null}
+                      </>
+                    ) : (
+                      <p className="hanzi-idiom-definition__status">
+                        暂无释义
+                      </p>
+                    )}
+                  </div>
+                ) : null}
                 <div className="hanzi-word-characters">
                   {Array.from(selected.candidate.word).map(
                     (character, index) => (

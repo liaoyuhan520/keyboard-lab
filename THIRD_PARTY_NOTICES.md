@@ -46,13 +46,6 @@ This project uses the following third-party libraries and datasets.
 - Source: https://github.com/leonsilicon/hsk3.1-syllabus
 - Used at development time to generate the common 2–4 character word lexicon in `src/data/hanziWordLexicon.ts`.
 
-## cnchar-idiom
-
-- Package: `cnchar-idiom`
-- License: MIT
-- Project: https://github.com/theajack/cnchar
-- Used at development time to generate the idiom lexicon in `src/data/hanziIdiomLexicon.ts`.
-
 ## SUBTLEX-CH-WF word frequency data
 
 - Package: `subtlex-ch-wf`
@@ -66,4 +59,19 @@ This project uses the following third-party libraries and datasets.
 - Package: `pinyin-pro`
 - License: MIT
 - Project: https://github.com/zh-lx/pinyin-pro
-- Used only at development time to generate toned and untoned pinyin for word candidates.
+- Used only at development time to generate toned and untoned pinyin for word candidates and the idiom candidate lexicon.
+
+## Idiom definitions database
+
+- Resource: `data/idioms.db`
+- Supplied by the project owner; copied from the original local `scrapling/data/idioms.db`.
+- The project copy includes one manual supplement entry, `鲤跃龙门`, added to support the exact pinyin query `liyuelongmen`; it is marked `status = supplement`. The original source copy is unchanged.
+- Some records include `source_url` values pointing to [汉典 zdic.net](https://www.zdic.net/).
+- Used at build time to generate both `src/data/hanziIdiomLexicon.ts` (four-character candidates) and `src/data/hanziIdiomDefinitions.ts`; it is not served to the browser.
+
+## sql.js
+
+- Package: `sql.js`
+- License: MIT
+- Project: https://github.com/sql-js/sql.js
+- Used only at development/build time to read `data/idioms.db`. It is not part of the browser bundle or runtime dependencies.
