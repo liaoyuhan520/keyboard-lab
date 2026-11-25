@@ -77,6 +77,43 @@ const getReadings = (char: string): HanziReading[] => {
   })
 }
 
+const buildCandidate = (char: string): HanziCandidate | null => {
+  let readings: HanziReading[]
+  try {
+    readings = getReadings(char)
+  } catch {
+    return null
+  }
+  if (readings.length === 0) {
+    return null
+  }
+
+  const frequencyRank = HANZI_FREQUENCY_RANK.get(char) ?? null
+  return {
+    char,
+    reading: readings[0],
+    readings,
+    frequencyRank,
+    isCommon: frequencyRank !== null && frequencyRank < COMMON_HANZI_LIMIT,
+    isPolyphonic: readings.length > 1,
+  }
+}
+
+/**
+ * 反查单个汉字。系统输入法直接上屏汉字时（拼音输入法选字），
+ * 用它把上屏的字接回候选模型，走同一套朗读与笔顺流程。
+ */
+export const findHanziCandidateByChar = (
+  rawChar: string,
+): HanziCandidate | null => {
+  const [char] = Array.from(rawChar.trim())
+  if (!char || !/^\p{Script=Han}$/u.test(char)) {
+    return null
+  }
+
+  return buildCandidate(char)
+}
+
 export const findHanziCandidates = (
   rawInput: string,
 ): HanziCandidateResult => {

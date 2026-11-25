@@ -4,8 +4,11 @@ import {
   useMemo,
   useRef,
   useState,
+  type CompositionEvent as ReactCompositionEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from 'react'
 import {
+  findHanziCandidateByChar,
   findHanziCandidates,
   findSpeechCharacter,
   type HanziCandidate,
@@ -24,6 +27,18 @@ const MAX_INPUT_LENGTH = 24
 const VISIBLE_CANDIDATE_LIMIT = 9
 const LETTER_CODE_PATTERN = /^Key([A-Z])$/
 const SOFT_KEYBOARD_ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'] as const
+const HANZI_PATTERN = /\p{Script=Han}/u
+
+/**
+ * 系统键盘（含中文输入法）会把字母、ü、汉字都可能写进输入框，
+ * 这里统一收敛成页面使用的拼音缓冲：只留拼音字母，v 记作 ü。
+ */
+const normalizeInputBuffer = (raw: string): string => {
+  const letters = Array.from(raw.toLowerCase()).filter(
+    (char) => char === 'ü' || (char >= 'a' && char <= 'z'),
+  )
+  return letters.join('').replaceAll('v', 'ü').slice(0, MAX_INPUT_LENGTH)
+}
 
 interface WordCandidateItem {
   readonly kind: 'word'
@@ -79,6 +94,16 @@ const letterFromCode = (code: string): string | null => {
 const toneLabel = (tone: number): string =>
   tone === 0 ? '轻声' : `第 ${tone} 声`
 
+const isMobileInputEnvironment = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false
+  }
+  return (
+    window.matchMedia('(max-width: 860px)').matches ||
+    window.matchMedia('(pointer: coarse)').matches
+  )
+}
+
 export default function HanziPractice() {
   const [buffer, setBuffer] = useState('')
   const [selected, setSelected] = useState<Selection | null>(null)
@@ -89,17 +114,15 @@ export default function HanziPractice() {
   } | null>(null)
   const [idiomDefinitionState, setIdiomDefinitionState] =
     useState<IdiomDefinitionState | null>(null)
-  const [isSoftKeyboardOpen, setIsSoftKeyboardOpen] = useState(() => {
-    if (typeof window === 'undefined') {
-      return false
-    }
-    return (
-      window.matchMedia('(max-width: 860px)').matches ||
-      window.matchMedia('(pointer: coarse)').matches
-    )
-  })
+  const [isSoftKeyboardOpen, setIsSoftKeyboardOpen] = useState(
+    isMobileInputEnvironment,
+  )
+  const [isSystemInputSupported] = useState(isMobileInputEnvironment)
   const practiceRef = useRef<HTMLDivElement>(null)
   const resultRef = useRef<HTMLElement>(null)
+  const systemInputRef = useRef<HTMLInputElement>(null)
+  const composingRef = useRef(false)
+  const bufferRef = useRef('')
   const {
     isSupported,
     voicesReady,
@@ -309,40 +332,51 @@ export default function HanziPractice() {
   }, [cancel])
 
   const focusPractice = useCallback((): void => {
+    // 系统键盘已经拿着焦点时不要把焦点挪走，否则 iOS 会立刻收起键盘
+    if (
+      systemInputRef.current !== null &&
+      document.activeElement === systemInputRef.current
+    ) {
+      return
+    }
     practiceRef.current?.focus({ preventScroll: true })
   }, [])
 
   const appendInputLetter = useCallback(
     (letter: string): void => {
-      const next = `${buffer}${letter}`
+      const next = `${bufferRef.current}${letter}`
         .replaceAll('v', 'ü')
         .slice(0, MAX_INPUT_LENGTH)
-      if (next === buffer) {
+      if (next === bufferRef.current) {
         return
       }
+      bufferRef.current = next
       setBuffer(next)
       resetForInput()
       focusPractice()
     },
-    [buffer, focusPractice, resetForInput],
+    [focusPractice, resetForInput],
   )
 
   const removeLastInputLetter = useCallback((): void => {
-    if (!buffer) {
+    if (!bufferRef.current) {
       return
     }
-    setBuffer(buffer.slice(0, -1))
+    const next = bufferRef.current.slice(0, -1)
+    bufferRef.current = next
+    setBuffer(next)
     resetForInput()
     focusPractice()
-  }, [buffer, focusPractice, resetForInput])
+  }, [focusPractice, resetForInput])
 
   const clearInput = useCallback((): void => {
-    if (buffer) {
+    if (bufferRef.current) {
+      bufferRef.current = ''
       setBuffer('')
       resetForInput()
     }
     focusPractice()
-  }, [buffer, focusPractice, resetForInput])
+  }, [focusPractice, resetForInput])
 
   const selectCandidate = useCallback(
     (item: CandidateItem): void => {
@@ -383,6 +417,140 @@ export default function HanziPractice() {
     )
   }, [])
 
+  /**
+   * 系统键盘输入的唯一入口：从输入框的完整文本推导拼音缓冲。
+   * 不依赖 keydown/code —— 手机输入法下 code 不可靠（Android 常为 229），
+   * 拼音字母常常只出现在组合文本里，甚至直接上屏成汉字。
+   */
+  const applyPinyinText = useCallback(
+    (raw: string): void => {
+      const next = normalizeInputBuffer(raw)
+      if (next === bufferRef.current) {
+        return
+      }
+      bufferRef.current = next
+      setBuffer(next)
+      resetForInput()
+    },
+    [resetForInput],
+  )
+
+  const commitSystemInputValue = useCallback((): void => {
+    const input = systemInputRef.current
+    if (!input) {
+      return
+    }
+
+    const hanzi = HANZI_PATTERN.exec(input.value)?.[0]
+    if (hanzi) {
+      const candidate = findHanziCandidateByChar(hanzi)
+      input.value = ''
+      // 汉字已上屏：清空拼音缓冲，但不走 resetForInput，
+      // 否则会取消朗读、把刚选中的字清掉
+      bufferRef.current = ''
+      setBuffer('')
+      if (candidate) {
+        selectCandidate({
+          kind: 'char',
+          key: `char:${candidate.char}:${candidate.reading.pinyin}`,
+          candidate,
+        })
+      }
+      return
+    }
+
+    applyPinyinText(input.value)
+  }, [applyPinyinText, selectCandidate])
+
+  const handleSystemInput = useCallback((): void => {
+    const input = systemInputRef.current
+    if (!input) {
+      return
+    }
+    if (composingRef.current) {
+      applyPinyinText(input.value)
+      return
+    }
+    if (input.value.length > MAX_INPUT_LENGTH) {
+      input.value = normalizeInputBuffer(input.value).replaceAll('ü', 'v')
+    }
+    commitSystemInputValue()
+  }, [applyPinyinText, commitSystemInputValue])
+
+  const handleCompositionStart = useCallback((): void => {
+    composingRef.current = true
+  }, [])
+
+  const handleCompositionUpdate = useCallback(
+    (event: ReactCompositionEvent<HTMLInputElement>): void => {
+      const data = event.data ?? ''
+      if (data && !HANZI_PATTERN.test(data)) {
+        applyPinyinText(data)
+      }
+    },
+    [applyPinyinText],
+  )
+
+  const handleCompositionEnd = useCallback((): void => {
+    composingRef.current = false
+    commitSystemInputValue()
+  }, [commitSystemInputValue])
+
+  const handleSystemKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLInputElement>): void => {
+      if (event.nativeEvent.isComposing) {
+        return
+      }
+
+      if (isClearShortcut(event.nativeEvent)) {
+        event.preventDefault()
+        if (systemInputRef.current) {
+          systemInputRef.current.value = ''
+        }
+        clearInput()
+        return
+      }
+
+      if (event.key === 'Enter' || event.code === 'NumpadEnter') {
+        event.preventDefault()
+        if (selected) {
+          speakSelected()
+        } else if (visibleCandidates[0]) {
+          selectCandidate(visibleCandidates[0])
+        }
+        return
+      }
+
+      if (/^[1-9]$/u.test(event.key)) {
+        const candidate = visibleCandidates[Number(event.key) - 1]
+        if (!candidate) {
+          return
+        }
+        event.preventDefault()
+        selectCandidate(candidate)
+        return
+      }
+
+      if (event.key === 'Escape') {
+        event.currentTarget.blur()
+      }
+    },
+    [clearInput, selectCandidate, selected, speakSelected, visibleCandidates],
+  )
+
+  // 页面状态是唯一真源：软键盘/物理键盘改了 buffer 时，把值写回输入框
+  useEffect(() => {
+    bufferRef.current = buffer
+    const input = systemInputRef.current
+    if (!input || composingRef.current) {
+      return
+    }
+    const canonical = buffer.replaceAll('ü', 'v')
+    if (input.value !== canonical) {
+      input.value = canonical
+    }
+  }, [buffer])
+
   useEffect(() => {
     if (!selectedId) {
       return
@@ -398,6 +566,13 @@ export default function HanziPractice() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
+      // 系统输入框自己处理按键；否则会重复输入并打断输入法组合
+      if (
+        systemInputRef.current !== null &&
+        event.target === systemInputRef.current
+      ) {
+        return
+      }
       if (
         event.key === 'Escape' ||
         event.key === 'Tab' ||
@@ -678,24 +853,59 @@ export default function HanziPractice() {
           className={`hanzi-input-display${isEmpty ? ' is-empty' : ''}${
             isLongInput ? ' is-long' : ''
           }${isVeryLongInput ? ' is-very-long' : ''}`}
-          aria-live="polite"
+          aria-live={isSystemInputSupported ? undefined : 'polite'}
         >
-          <span className="hanzi-input-display__value">
+          <span
+            className="hanzi-input-display__value"
+            aria-hidden={isSystemInputSupported ? true : undefined}
+          >
             {buffer || '输入拼音'}
           </span>
           {!isEmpty ? (
-            <span className="hanzi-input-display__keys">
+            <span
+              className="hanzi-input-display__keys"
+              aria-hidden={isSystemInputSupported ? true : undefined}
+            >
               （{keyboardKeys}）
             </span>
           ) : null}
           {!isEmpty ? (
             <span className="hanzi-input-display__cursor" aria-hidden="true" />
           ) : null}
+          {isSystemInputSupported ? (
+            /*
+             * 真实的可编辑元素是调起手机系统键盘的唯一途径：
+             * 透明覆盖在拼音显示区上，点一下就由用户手势完成 focus。
+             * 位置/尺寸必须真实（不能 display:none、不能 0 高度），
+             * iOS 只对“可见且用户手势内聚焦”的元素弹键盘。
+             */
+            <input
+              ref={systemInputRef}
+              className="hanzi-system-input"
+              type="text"
+              inputMode="text"
+              enterKeyHint="done"
+              autoCapitalize="none"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck={false}
+              lang="en"
+              aria-label="拼音输入框，轻点可调起系统键盘"
+              defaultValue=""
+              onInput={handleSystemInput}
+              onCompositionStart={handleCompositionStart}
+              onCompositionUpdate={handleCompositionUpdate}
+              onCompositionEnd={handleCompositionEnd}
+              onKeyDown={handleSystemKeyDown}
+            />
+          ) : null}
         </div>
 
         <div className="hanzi-input-actions">
           <span className="hanzi-input-hint">
-            按物理键盘或屏幕键盘输入 · 点击候选或按数字键选择 · Enter 选第一个
+            {isSystemInputSupported
+              ? '点上方拼音区可调起系统键盘（含中文输入法）· 也可用屏幕键盘 · 点击候选或按数字键选择'
+              : '按物理键盘或屏幕键盘输入 · 点击候选或按数字键选择 · Enter 选第一个'}
           </span>
           <div className="hanzi-input-buttons">
             <button

@@ -193,6 +193,36 @@ export function PinyinLab({ onClose }: PinyinLabProps) {
     }
   }, [])
 
+  /**
+   * 手机弹出系统键盘时，视口（visualViewport）会变矮，
+   * 但 fixed 定位的对话框不会自动跟着缩，候选列表会被键盘挡住。
+   * 这里把真实可视高度写进 CSS 变量，让对话框随键盘一起收。
+   */
+  useEffect(() => {
+    const dialog = dialogRef.current
+    const viewport = window.visualViewport
+    if (!dialog || !viewport) {
+      return
+    }
+
+    const applyViewportHeight = (): void => {
+      dialog.style.setProperty(
+        '--pinyin-vvh',
+        `${Math.round(viewport.height)}px`,
+      )
+    }
+
+    applyViewportHeight()
+    viewport.addEventListener('resize', applyViewportHeight)
+    viewport.addEventListener('scroll', applyViewportHeight)
+
+    return () => {
+      viewport.removeEventListener('resize', applyViewportHeight)
+      viewport.removeEventListener('scroll', applyViewportHeight)
+      dialog.style.removeProperty('--pinyin-vvh')
+    }
+  }, [])
+
   useEffect(() => {
     if (!isChartExpanded) {
       return
